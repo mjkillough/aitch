@@ -1,0 +1,8 @@
+[package]
+name = "aitch"
+description = "A HTTP server toolkit, loosely based on Go's net/http."
+license = "MIT"
+version = "0.1.0"
+authors = ["Michael Killough <michaeljkillough@gmail.com>"]
+
+[dependencies]
