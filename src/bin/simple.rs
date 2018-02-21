@@ -3,8 +3,8 @@ extern crate http;
 
 use aitch::{Request, Response, ResponseBuilder};
 
-fn handler(_req: &mut Request, mut resp: ResponseBuilder) -> Response {
-    resp.body("Hello world!".as_bytes().to_owned()).unwrap()
+fn handler(_req: &mut Request, mut resp: ResponseBuilder) -> http::Result<Response> {
+    resp.body("Hello world!".as_bytes().to_owned())
 }
 
 fn main() {

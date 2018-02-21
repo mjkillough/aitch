@@ -19,16 +19,33 @@ pub type Response = http::Response<Vec<u8>>;
 pub type ResponseBuilder = http::response::Builder;
 
 
+pub trait Responder {
+    fn into_response(self) -> Response;
+}
+
+impl Responder for http::Result<Response> {
+    fn into_response(self) -> Response {
+        self.unwrap_or_else(|_| {
+            http::Response::builder()
+                .status(http::StatusCode::INTERNAL_SERVER_ERROR)
+                .body(Vec::new())
+                .unwrap()
+        })
+    }
+}
+
+
 pub trait Handler {
     fn handle(&self, &mut Request, ResponseBuilder) -> Response;
 }
 
-impl<F> Handler for F
+impl<Fun, Resp> Handler for Fun
 where
-    F: Fn(&mut Request, ResponseBuilder) -> Response,
+    Fun: Fn(&mut Request, ResponseBuilder) -> Resp,
+    Resp: Responder,
 {
     fn handle(&self, req: &mut Request, resp: ResponseBuilder) -> Response {
-        (self)(req, resp)
+        (self)(req, resp).into_response()
     }
 }
 
