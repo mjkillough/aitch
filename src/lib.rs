@@ -8,15 +8,14 @@ mod errors;
 
 use std::net::SocketAddr;
 
-use futures::future::Future;
+use futures::{Future, Stream};
 use hyper::server::{Request as HyperRequest, Response as HyperResponse};
 
 use errors::*;
 
 
-pub type Body = hyper::Body;
-pub type Request = http::Request<hyper::Body>;
-pub type Response = http::Response<&'static str>;
+pub type Request = http::Request<Vec<u8>>;
+pub type Response = http::Response<Vec<u8>>;
 pub type ResponseBuilder = http::response::Builder;
 
 
@@ -70,9 +69,16 @@ impl hyper::server::Service for Service {
     type Future = Box<Future<Item = Self::Response, Error = Self::Error>>;
 
     fn call(&self, req: HyperRequest) -> Self::Future {
-        let builder = http::Response::builder();
-        let response = self.handler.handle(&mut req.into(), builder);
-        let hyper_response = response.map(|body| hyper::Body::from(hyper::Chunk::from(body)));
-        Box::new(futures::future::ok(hyper_response.into()))
+        let handler = self.handler;
+        let req: http::Request<hyper::Body> = req.into();
+        let (parts, body) = req.into_parts();
+        let fut = body.concat2().and_then(move |body| {
+            let req = Request::from_parts(parts, body.to_vec());
+            let builder = http::Response::builder();
+            let response = handler.handle(&mut req.into(), builder);
+            let hyper_response = response.map(|body| hyper::Body::from(hyper::Chunk::from(body)));
+            futures::future::ok(hyper_response.into())
+        });
+        Box::new(fut)
     }
 }
