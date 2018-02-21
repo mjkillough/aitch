@@ -8,8 +8,7 @@ mod errors;
 
 use std::net::SocketAddr;
 
-use futures::future::{Future, FutureResult};
-use hyper::header::ContentLength;
+use futures::future::Future;
 use hyper::server::{Request as HyperRequest, Response as HyperResponse};
 
 use errors::*;
@@ -20,7 +19,19 @@ pub type Request = http::Request<hyper::Body>;
 pub type Response = http::Response<&'static str>;
 pub type ResponseBuilder = http::response::Builder;
 
-pub type Handler = Fn(&mut Request, ResponseBuilder) -> Response;
+
+pub trait Handler {
+    fn handle(&self, &mut Request, ResponseBuilder) -> Response;
+}
+
+impl<F> Handler for F
+where
+    F: Fn(&mut Request, ResponseBuilder) -> Response,
+{
+    fn handle(&self, req: &mut Request, resp: ResponseBuilder) -> Response {
+        (self)(req, resp)
+    }
+}
 
 
 pub struct Server {
@@ -60,7 +71,7 @@ impl hyper::server::Service for Service {
 
     fn call(&self, req: HyperRequest) -> Self::Future {
         let builder = http::Response::builder();
-        let response = (self.handler)(&mut req.into(), builder);
+        let response = self.handler.handle(&mut req.into(), builder);
         let hyper_response = response.map(|body| hyper::Body::from(hyper::Chunk::from(body)));
         Box::new(futures::future::ok(hyper_response.into()))
     }
