@@ -7,6 +7,7 @@ extern crate hyper;
 mod errors;
 
 use std::net::SocketAddr;
+use std::sync::Arc;
 
 use futures::{Future, Stream};
 use hyper::server::{Request as HyperRequest, Response as HyperResponse};
@@ -50,15 +51,84 @@ where
 }
 
 
-pub struct Server {
-    addr: SocketAddr,
-    handler: &'static Handler,
+pub enum StaticHandler<H>
+where
+    H: Handler + 'static,
+{
+    Ref(&'static H),
+    Arc(Arc<H>),
 }
 
-//     server.run().unwrap();
+impl<H> Handler for StaticHandler<H>
+where
+    H: Handler + 'static,
+{
+    fn handle(&self, req: &mut Request, resp: ResponseBuilder) -> Response {
+        match *self {
+            StaticHandler::Ref(ref h) => h.handle(req, resp),
+            StaticHandler::Arc(ref h) => h.handle(req, resp),
+        }
+    }
+}
 
-impl Server {
-    pub fn new(addr: SocketAddr, handler: &'static Handler) -> Server {
+impl<H> Clone for StaticHandler<H>
+where
+    H: Handler + 'static,
+{
+    fn clone(&self) -> StaticHandler<H> {
+        match *self {
+            StaticHandler::Ref(ref h) => StaticHandler::Ref(h),
+            StaticHandler::Arc(ref h) => StaticHandler::Arc(h.clone()),
+        }
+    }
+}
+
+impl<H> From<&'static H> for StaticHandler<H>
+where
+    H: Handler + 'static,
+{
+    fn from(handler: &'static H) -> StaticHandler<H> {
+        StaticHandler::Ref(handler)
+    }
+}
+
+impl<H> From<Arc<H>> for StaticHandler<H>
+where
+    H: Handler + 'static,
+{
+    fn from(handler: Arc<H>) -> StaticHandler<H> {
+        StaticHandler::Arc(handler)
+    }
+}
+
+impl<H> From<H> for StaticHandler<H>
+where
+    H: Handler + 'static,
+{
+    fn from(handler: H) -> StaticHandler<H> {
+        Arc::new(handler).into()
+    }
+}
+
+
+pub struct Server<H>
+where
+    H: Handler + 'static,
+{
+    addr: SocketAddr,
+    handler: StaticHandler<H>,
+}
+
+impl<H> Server<H>
+where
+    H: Handler + 'static,
+{
+    pub fn new<SH>(addr: SocketAddr, handler: SH) -> Server<H>
+    where
+        SH: Into<StaticHandler<H>>,
+        H: Handler + 'static,
+    {
+        let handler = handler.into();
         Server { addr, handler }
     }
 
@@ -67,7 +137,7 @@ impl Server {
         hyper::server::Http::new()
             .bind(&addr, move || {
                 Ok(Service {
-                    handler: self.handler,
+                    handler: self.handler.clone(),
                 })
             })?
             .run()?;
@@ -75,18 +145,24 @@ impl Server {
     }
 }
 
-struct Service {
-    handler: &'static Handler,
+struct Service<H>
+where
+    H: Handler + 'static,
+{
+    handler: StaticHandler<H>,
 }
 
-impl hyper::server::Service for Service {
+impl<H> hyper::server::Service for Service<H>
+where
+    H: Handler + 'static,
+{
     type Request = HyperRequest;
     type Response = HyperResponse;
     type Error = hyper::Error;
     type Future = Box<Future<Item = Self::Response, Error = Self::Error>>;
 
     fn call(&self, req: HyperRequest) -> Self::Future {
-        let handler = self.handler;
+        let handler = self.handler.clone();
         let req: http::Request<hyper::Body> = req.into();
         let (parts, body) = req.into_parts();
         let fut = body.concat2().and_then(move |body| {
