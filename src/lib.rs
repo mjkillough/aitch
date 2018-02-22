@@ -22,7 +22,7 @@ pub type ResponseBuilder = http::response::Builder;
 
 
 pub struct SimpleRouter {
-    handlers: HashMap<String, &'static Handler>,
+    handlers: HashMap<String, Box<Handler>>,
 }
 
 impl SimpleRouter {
@@ -32,15 +32,16 @@ impl SimpleRouter {
         }
     }
 
-    pub fn register_handler<S>(&mut self, pattern: S, handler: &'static Handler)
+    pub fn register_handler<S, H>(&mut self, pattern: S, handler: H)
     where
         S: Into<String>,
+        H: Handler + 'static,
     {
         let pattern = pattern.into();
         if self.handlers.contains_key(&pattern) {
             panic!("SimpleRouter: Tried to register pattern twice: {}", pattern);
         }
-        self.handlers.insert(pattern, handler);
+        self.handlers.insert(pattern, Box::new(handler));
     }
 
     pub fn to_handler(self) -> Arc<Fn(&mut Request, ResponseBuilder) -> Response> {
@@ -174,19 +175,21 @@ where
 mod test {
     use super::*;
 
+    use http;
+
     fn handler1(_req: &mut Request, mut resp: ResponseBuilder) -> http::Result<Response> {
-        resp.body("Hello world!".as_bytes().to_owned())
+        resp.body("1".as_bytes().to_owned())
     }
 
     fn handler2(_req: &mut Request, mut resp: ResponseBuilder) -> Response {
-        resp.body("Hello world!".as_bytes().to_owned()).unwrap()
+        resp.body("2".as_bytes().to_owned()).unwrap()
     }
 
     struct Handler3;
 
     impl Handler for Handler3 {
         fn handle(&self, _req: &mut Request, mut resp: ResponseBuilder) -> Response {
-            resp.body("Hello world!".as_bytes().to_owned()).unwrap()
+            resp.body("3".as_bytes().to_owned()).unwrap()
         }
     }
 
@@ -213,5 +216,29 @@ mod test {
     #[test]
     fn test_handler() {
         Server::new("127.0.0.1:8000".parse().unwrap(), Handler3 {});
+    }
+
+    #[test]
+    fn test_router() {
+        let mut router = SimpleRouter::new();
+        router.register_handler("/handler1", HandlerFunc(handler1));
+        router.register_handler("/handler2a", HandlerFunc(handler2));
+        router.register_handler("/handler2b", HandlerFunc(|req, resp| handler2(req, resp)));
+        router.register_handler("/handler3", Handler3 {});
+
+        let route = |path| {
+            router
+                .handle(
+                    &mut http::Request::get(path).body(vec![]).unwrap(),
+                    ResponseBuilder::new(),
+                )
+                .body()
+                .clone()
+        };
+
+        assert_eq!(route("/handler1"), "1".as_bytes());
+        assert_eq!(route("/handler2a"), "2".as_bytes());
+        assert_eq!(route("/handler2b"), "2".as_bytes());
+        assert_eq!(route("/handler3"), "3".as_bytes());
     }
 }

@@ -13,8 +13,9 @@ fn handler2(_req: &mut Request, mut resp: ResponseBuilder) -> http::Result<Respo
 
 fn main() {
     let mut handler = aitch::SimpleRouter::new();
-    handler.register_handler("/handler1", &HandlerFunc(handler1));
-    handler.register_handler("/handler2", &HandlerFunc(handler2));
+    handler.register_handler("/handler1", HandlerFunc(handler1));
+    handler.register_handler("/handler2", HandlerFunc(handler2));
+    handler.register_handler("/handler2", HandlerFunc(|req, resp| handler2(req, resp)));
 
     let addr = "127.0.0.1:3000".parse().unwrap();
     aitch::Server::new(addr, handler).run().unwrap();
