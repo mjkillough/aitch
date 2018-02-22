@@ -6,6 +6,7 @@ extern crate hyper;
 
 mod errors;
 
+use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
@@ -18,6 +19,50 @@ use errors::*;
 pub type Request = http::Request<Vec<u8>>;
 pub type Response = http::Response<Vec<u8>>;
 pub type ResponseBuilder = http::response::Builder;
+
+
+pub struct SimpleRouter {
+    handlers: HashMap<String, &'static Handler>,
+}
+
+impl SimpleRouter {
+    pub fn new() -> SimpleRouter {
+        SimpleRouter {
+            handlers: HashMap::new(),
+        }
+    }
+
+    pub fn register_handler<S>(&mut self, pattern: S, handler: &'static Handler)
+    where
+        S: Into<String>,
+    {
+        let pattern = pattern.into();
+        if self.handlers.contains_key(&pattern) {
+            panic!("SimpleRouter: Tried to register pattern twice: {}", pattern);
+        }
+        self.handlers.insert(pattern, handler);
+    }
+
+    pub fn to_handler(self) -> Arc<Fn(&mut Request, ResponseBuilder) -> Response> {
+        Arc::new(move |req, resp| self.handle(req, resp))
+    }
+}
+
+impl Handler for SimpleRouter {
+    fn handle(&self, req: &mut Request, mut resp: ResponseBuilder) -> Response {
+        let matching = self.handlers
+            .iter()
+            .filter(|&(pattern, _)| req.uri().path().starts_with(pattern))
+            .max_by(|&(pattern1, _), &(pattern2, _)| pattern1.cmp(pattern2));
+
+        match matching {
+            Some((_, handler)) => handler.handle(req, resp),
+            None => resp.status(http::StatusCode::NOT_FOUND)
+                .body(Vec::new())
+                .into_response(),
+        }
+    }
+}
 
 
 pub trait Responder {
