@@ -123,3 +123,50 @@ where
         Box::new(fut)
     }
 }
+
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    fn handler1(_req: &mut Request, mut resp: ResponseBuilder) -> http::Result<Response> {
+        resp.body("Hello world!".as_bytes().to_owned())
+    }
+
+    fn handler2(_req: &mut Request, mut resp: ResponseBuilder) -> Response {
+        resp.body("Hello world!".as_bytes().to_owned()).unwrap()
+    }
+
+    struct Handler3;
+
+    impl Handler for Handler3 {
+        fn handle(&self, _req: &mut Request, mut resp: ResponseBuilder) -> Response {
+            resp.body("Hello world!".as_bytes().to_owned()).unwrap()
+        }
+    }
+
+    #[test]
+    fn test_function_can_return_responder() {
+        Server::new("127.0.0.1:8000".parse().unwrap(), HandlerFunc(handler1));
+        Server::new("127.0.0.1:8000".parse().unwrap(), HandlerFunc(&handler1));
+    }
+
+    #[test]
+    fn test_function_can_return_response() {
+        Server::new("127.0.0.1:8000".parse().unwrap(), HandlerFunc(handler2));
+        Server::new("127.0.0.1:8000".parse().unwrap(), HandlerFunc(&handler2));
+    }
+
+    #[test]
+    fn test_closure() {
+        Server::new(
+            "127.0.0.1:8000".parse().unwrap(),
+            HandlerFunc(|req, resp| handler2(req, resp)),
+        );
+    }
+
+    #[test]
+    fn test_handler() {
+        Server::new("127.0.0.1:8000".parse().unwrap(), Handler3 {});
+    }
+}
