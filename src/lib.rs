@@ -24,6 +24,12 @@ pub trait Responder {
     fn into_response(self) -> Response;
 }
 
+impl Responder for Response {
+    fn into_response(self) -> Response {
+        self
+    }
+}
+
 impl Responder for http::Result<Response> {
     fn into_response(self) -> Response {
         self.unwrap_or_else(|_| {
@@ -40,73 +46,19 @@ pub trait Handler {
     fn handle(&self, &mut Request, ResponseBuilder) -> Response;
 }
 
-impl<Fun, Resp> Handler for Fun
+
+pub struct HandlerFunc<Func, Resp>(pub Func)
 where
-    Fun: Fn(&mut Request, ResponseBuilder) -> Resp,
+    Func: Fn(&mut Request, ResponseBuilder) -> Resp,
+    Resp: Responder;
+
+impl<Func, Resp> Handler for HandlerFunc<Func, Resp>
+where
+    Func: Fn(&mut Request, ResponseBuilder) -> Resp,
     Resp: Responder,
 {
     fn handle(&self, req: &mut Request, resp: ResponseBuilder) -> Response {
-        (self)(req, resp).into_response()
-    }
-}
-
-
-pub enum StaticHandler<H>
-where
-    H: Handler + 'static,
-{
-    Ref(&'static H),
-    Arc(Arc<H>),
-}
-
-impl<H> Handler for StaticHandler<H>
-where
-    H: Handler + 'static,
-{
-    fn handle(&self, req: &mut Request, resp: ResponseBuilder) -> Response {
-        match *self {
-            StaticHandler::Ref(ref h) => h.handle(req, resp),
-            StaticHandler::Arc(ref h) => h.handle(req, resp),
-        }
-    }
-}
-
-impl<H> Clone for StaticHandler<H>
-where
-    H: Handler + 'static,
-{
-    fn clone(&self) -> StaticHandler<H> {
-        match *self {
-            StaticHandler::Ref(ref h) => StaticHandler::Ref(h),
-            StaticHandler::Arc(ref h) => StaticHandler::Arc(h.clone()),
-        }
-    }
-}
-
-impl<H> From<&'static H> for StaticHandler<H>
-where
-    H: Handler + 'static,
-{
-    fn from(handler: &'static H) -> StaticHandler<H> {
-        StaticHandler::Ref(handler)
-    }
-}
-
-impl<H> From<Arc<H>> for StaticHandler<H>
-where
-    H: Handler + 'static,
-{
-    fn from(handler: Arc<H>) -> StaticHandler<H> {
-        StaticHandler::Arc(handler)
-    }
-}
-
-impl<H> From<H> for StaticHandler<H>
-where
-    H: Handler + 'static,
-{
-    fn from(handler: H) -> StaticHandler<H> {
-        Arc::new(handler).into()
+        (self.0)(req, resp).into_response()
     }
 }
 
@@ -116,19 +68,15 @@ where
     H: Handler + 'static,
 {
     addr: SocketAddr,
-    handler: StaticHandler<H>,
+    handler: Arc<H>,
 }
 
 impl<H> Server<H>
 where
     H: Handler + 'static,
 {
-    pub fn new<SH>(addr: SocketAddr, handler: SH) -> Server<H>
-    where
-        SH: Into<StaticHandler<H>>,
-        H: Handler + 'static,
-    {
-        let handler = handler.into();
+    pub fn new(addr: SocketAddr, handler: H) -> Server<H> {
+        let handler = Arc::new(handler);
         Server { addr, handler }
     }
 
@@ -149,7 +97,7 @@ struct Service<H>
 where
     H: Handler + 'static,
 {
-    handler: StaticHandler<H>,
+    handler: Arc<H>,
 }
 
 impl<H> hyper::server::Service for Service<H>
