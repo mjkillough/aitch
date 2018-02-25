@@ -1,21 +1,39 @@
 extern crate aitch;
+extern crate futures;
 extern crate http;
 
-use aitch::{Handler, HandlerFunc, Request, Response, ResponseBuilder};
+use aitch::{AsyncBody, FutureResponse, HandlerFunc, ResponseBuilder, SyncBody};
+use http::{Request, Response};
 
-fn handler1(_req: &mut Request, mut resp: ResponseBuilder) -> http::Result<Response> {
-    resp.body("Hello world 1!".as_bytes().to_owned())
+
+type SyncRequest = Request<SyncBody>;
+type SyncResponse = Response<SyncBody>;
+
+
+fn handler1(_req: &mut SyncRequest, mut resp: ResponseBuilder) -> http::Result<SyncResponse> {
+    resp.body("Hello 1!".as_bytes().to_owned())
 }
 
-fn handler2(_req: &mut Request, mut resp: ResponseBuilder) -> http::Result<Response> {
-    resp.body("Hello world 2!".as_bytes().to_owned())
+fn handler2(_req: &mut SyncRequest, mut resp: ResponseBuilder) -> SyncResponse {
+    resp.body("Hello 2!".as_bytes().to_owned()).unwrap()
+}
+
+fn handler3(req: &mut Request<AsyncBody>, mut resp: ResponseBuilder) -> FutureResponse<AsyncBody> {
+    let v = "Hello from the future!".as_bytes().to_owned();
+    let b = AsyncBody::from(v);
+    let r = resp.body(b).unwrap();
+    let fut = futures::future::ok(r);
+    Box::new(fut)
 }
 
 fn main() {
     let mut handler = aitch::SimpleRouter::new();
-    handler.register_handler("/handler1", HandlerFunc(handler1));
-    handler.register_handler("/handler2", HandlerFunc(handler2));
-    handler.register_handler("/handler2", HandlerFunc(|req, resp| handler2(req, resp)));
+    handler.register_handler("/handler1", HandlerFunc::from(handler1));
+    handler.register_handler("/handler2", HandlerFunc::from(handler2));
+    handler.register_handler(
+        "/handler3",
+        HandlerFunc::from(|req: &mut SyncRequest, resp| handler2(req, resp)),
+    );
 
     let addr = "127.0.0.1:3000".parse().unwrap();
     aitch::Server::new(addr, handler).run().unwrap();
