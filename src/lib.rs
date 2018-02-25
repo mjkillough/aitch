@@ -8,12 +8,11 @@ pub mod errors;
 mod handler;
 mod router;
 mod server;
-mod traits;
+pub mod traits;
 
 pub use handler::Handler;
 pub use router::SimpleRouter;
 pub use server::Server;
-pub use traits::{FromHttpResponse, HttpBody, IntoResponse};
 
 pub type ResponseBuilder = http::response::Builder;
 

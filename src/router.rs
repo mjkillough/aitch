@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use http;
 
-use super::{FromHttpResponse, Handler, HttpBody, ResponseBuilder};
+use super::{Handler, ResponseBuilder};
+use traits::{FromHttpResponse, HttpBody};
 
 
 pub struct SimpleRouter<Body, Resp>
