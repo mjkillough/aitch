@@ -2,7 +2,8 @@ extern crate aitch;
 extern crate futures;
 extern crate http;
 
-use aitch::{AsyncBody, FutureResponse, HandlerFunc, ResponseBuilder, SyncBody};
+use aitch::{AsyncBody, AsyncHandlerFunc, FutureResponse, ResponseBuilder, SyncBody,
+            SyncHandlerFunc};
 use http::{Request, Response};
 
 
@@ -28,11 +29,11 @@ fn handler3(req: &mut Request<AsyncBody>, mut resp: ResponseBuilder) -> FutureRe
 
 fn main() {
     let mut handler = aitch::SimpleRouter::new();
-    handler.register_handler("/handler1", HandlerFunc::from(handler1));
-    handler.register_handler("/handler2", HandlerFunc::from(handler2));
+    // handler.register_handler("/handler1", AsyncHandlerFunc(handler3));
+    handler.register_handler("/handler2", SyncHandlerFunc(handler2));
     handler.register_handler(
         "/handler3",
-        HandlerFunc::from(|req: &mut SyncRequest, resp| handler2(req, resp)),
+        SyncHandlerFunc(|req, resp| handler2(req, resp)),
     );
 
     let addr = "127.0.0.1:3000".parse().unwrap();

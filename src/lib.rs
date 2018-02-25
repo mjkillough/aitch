@@ -9,7 +9,7 @@ mod handler;
 mod router;
 mod traits;
 
-pub use handler::{AsyncHandler, Handler, HandlerFunc, SyncHandler};
+pub use handler::{AsyncHandler, AsyncHandlerFunc, Handler, SyncHandler, SyncHandlerFunc};
 pub use router::SimpleRouter;
 pub use traits::{EmptyBody, FromHttpResponse, IntoResponse};
 

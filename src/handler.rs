@@ -1,5 +1,3 @@
-use std::marker::PhantomData;
-
 use http;
 
 use super::{AsyncBody, EmptyBody, FromHttpResponse, FutureResponse, IntoResponse, ResponseBuilder,
@@ -33,35 +31,42 @@ where
 }
 
 
-pub struct HandlerFunc<Func, Body, Resp>
-where
-    Func: Fn(&mut http::Request<Body>, ResponseBuilder) -> Resp,
-    Body: EmptyBody,
-{
-    func: Func,
-    marker: PhantomData<(Body, Resp)>,
-}
+// We have separate SyncHandlerFunc/AsyncHandlerFunc types because:
+//  - `HandlerFunc<Func, Body, Resp>` requires a `PhantomData` to use the type
+//    parameters, so stops us from using a tuple struct.
+//  - It stops us from hitting rust/issues#41078 when passing a closure. If
+//    `Func` is generic over `Body`, then the compiler isn't smart enough to
+//    infer the right lifetime. We'd need all closures to specify the type of
+//    `req` to work around this.
 
-impl<Func, Body, Resp> From<Func> for HandlerFunc<Func, Body, Resp>
+
+pub struct SyncHandlerFunc<Func, Resp>(pub Func)
 where
-    Func: Fn(&mut http::Request<Body>, ResponseBuilder) -> Resp,
-    Body: EmptyBody,
+    Func: Fn(&mut http::Request<SyncBody>, ResponseBuilder) -> Resp;
+
+impl<Func, Resp, HandlerResp> Handler<SyncBody, HandlerResp> for SyncHandlerFunc<Func, Resp>
+where
+    Func: Fn(&mut http::Request<SyncBody>, ResponseBuilder) -> Resp,
+    Resp: IntoResponse<HandlerResp>,
+    HandlerResp: FromHttpResponse<SyncBody>,
 {
-    fn from(func: Func) -> HandlerFunc<Func, Body, Resp> {
-        let marker = PhantomData;
-        HandlerFunc { func, marker }
+    fn handle(&self, req: &mut http::Request<SyncBody>, resp: ResponseBuilder) -> HandlerResp {
+        (self.0)(req, resp).into_response()
     }
 }
 
 
-impl<Func, Body, Resp, HandlerResp> Handler<Body, HandlerResp> for HandlerFunc<Func, Body, Resp>
+pub struct AsyncHandlerFunc<Func, Resp>(pub Func)
 where
-    Func: Fn(&mut http::Request<Body>, ResponseBuilder) -> Resp,
+    Func: Fn(&mut http::Request<AsyncBody>, ResponseBuilder) -> Resp;
+
+impl<Func, Resp, HandlerResp> Handler<AsyncBody, HandlerResp> for AsyncHandlerFunc<Func, Resp>
+where
+    Func: Fn(&mut http::Request<AsyncBody>, ResponseBuilder) -> Resp,
     Resp: IntoResponse<HandlerResp>,
-    Body: EmptyBody,
-    HandlerResp: FromHttpResponse<Body>,
+    HandlerResp: FromHttpResponse<AsyncBody>,
 {
-    fn handle(&self, req: &mut http::Request<Body>, resp: ResponseBuilder) -> HandlerResp {
-        (self.func)(req, resp).into_response()
+    fn handle(&self, req: &mut http::Request<AsyncBody>, resp: ResponseBuilder) -> HandlerResp {
+        (self.0)(req, resp).into_response()
     }
 }
