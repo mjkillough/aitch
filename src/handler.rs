@@ -1,13 +1,13 @@
 use http;
 
-use super::{AsyncBody, EmptyBody, FromHttpResponse, FutureResponse, IntoResponse, ResponseBuilder,
+use super::{AsyncBody, FromHttpResponse, FutureResponse, HttpBody, IntoResponse, ResponseBuilder,
             SyncBody};
 
 
 pub trait Handler<Body, Resp>
 where
     Resp: FromHttpResponse<Body>,
-    Body: EmptyBody,
+    Body: HttpBody,
 {
     fn handle(&self, &mut http::Request<Body>, ResponseBuilder) -> Resp;
 }
@@ -101,7 +101,7 @@ mod test {
 
     fn request<Body>() -> http::Request<Body>
     where
-        Body: EmptyBody,
+        Body: HttpBody,
     {
         http::Request::builder().body(Body::empty()).unwrap()
     }

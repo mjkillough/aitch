@@ -4,11 +4,11 @@ use futures;
 use super::{AsyncBody, FutureResponse, SyncBody};
 
 
-pub trait EmptyBody {
+pub trait HttpBody {
     fn empty() -> Self;
 }
 
-impl<T> EmptyBody for T
+impl<T> HttpBody for T
 where
     T: Default,
 {

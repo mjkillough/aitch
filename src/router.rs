@@ -2,13 +2,13 @@ use std::collections::HashMap;
 
 use http;
 
-use super::{EmptyBody, FromHttpResponse, Handler, ResponseBuilder};
+use super::{FromHttpResponse, Handler, HttpBody, ResponseBuilder};
 
 
 pub struct SimpleRouter<Body, Resp>
 where
     Resp: FromHttpResponse<Body>,
-    Body: EmptyBody,
+    Body: HttpBody,
 {
     handlers: HashMap<String, Box<Handler<Body, Resp>>>,
 }
@@ -16,7 +16,7 @@ where
 impl<Body, Resp> SimpleRouter<Body, Resp>
 where
     Resp: FromHttpResponse<Body>,
-    Body: EmptyBody,
+    Body: HttpBody,
 {
     pub fn new() -> SimpleRouter<Body, Resp> {
         SimpleRouter {
@@ -40,7 +40,7 @@ where
 impl<Body, Resp> Handler<Body, Resp> for SimpleRouter<Body, Resp>
 where
     Resp: FromHttpResponse<Body>,
-    Body: EmptyBody,
+    Body: HttpBody,
 {
     fn handle(&self, req: &mut http::Request<Body>, mut resp: ResponseBuilder) -> Resp {
         let matching = self.handlers

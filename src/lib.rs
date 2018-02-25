@@ -11,7 +11,7 @@ mod traits;
 
 pub use handler::{AsyncHandler, AsyncHandlerFunc, Handler, SyncHandler, SyncHandlerFunc};
 pub use router::SimpleRouter;
-pub use traits::{EmptyBody, FromHttpResponse, IntoResponse};
+pub use traits::{FromHttpResponse, HttpBody, IntoResponse};
 
 use std::marker::PhantomData;
 use std::net::SocketAddr;
@@ -31,7 +31,7 @@ pub type SyncBody = Vec<u8>;
 pub struct Server<H, Body, Resp>
 where
     H: Handler<Body, Resp> + 'static,
-    Body: EmptyBody + 'static,
+    Body: HttpBody + 'static,
     Resp: FromHttpResponse<Body> + 'static,
 {
     addr: SocketAddr,
@@ -42,7 +42,7 @@ where
 impl<H, Body, Resp> Server<H, Body, Resp>
 where
     H: Handler<Body, Resp> + 'static,
-    Body: EmptyBody + 'static,
+    Body: HttpBody + 'static,
     Resp: FromHttpResponse<Body> + 'static,
 {
     pub fn new(addr: SocketAddr, handler: H) -> Server<H, Body, Resp> {
@@ -96,7 +96,7 @@ where
 struct Service<H, Body, Resp>
 where
     H: Handler<Body, Resp> + 'static,
-    Body: EmptyBody + 'static,
+    Body: HttpBody + 'static,
     Resp: FromHttpResponse<Body> + 'static,
 {
     handler: Arc<H>,
