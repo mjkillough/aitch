@@ -36,6 +36,16 @@ where
         }
         self.handlers.insert(pattern, Box::new(handler));
     }
+
+    pub fn handler(
+        &self,
+        req: &http::Request<Body>,
+    ) -> Option<(&String, &Box<Handler<Body, Resp>>)> {
+        self.handlers
+            .iter()
+            .filter(|&(pattern, _)| req.uri().path().starts_with(pattern))
+            .max_by(|&(pattern1, _), &(pattern2, _)| pattern1.cmp(pattern2))
+    }
 }
 
 impl<Body, Resp> Handler<Body, Resp> for SimpleRouter<Body, Resp>
@@ -44,12 +54,7 @@ where
     Body: HttpBody,
 {
     fn handle(&self, req: &mut http::Request<Body>, mut resp: ResponseBuilder) -> Resp {
-        let matching = self.handlers
-            .iter()
-            .filter(|&(pattern, _)| req.uri().path().starts_with(pattern))
-            .max_by(|&(pattern1, _), &(pattern2, _)| pattern1.cmp(pattern2));
-
-        match matching {
+        match self.handler(req) {
             Some((_, handler)) => handler.handle(req, resp),
             None => Resp::from_http_response(
                 resp.status(http::StatusCode::NOT_FOUND)
