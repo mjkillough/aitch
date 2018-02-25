@@ -1,7 +1,8 @@
 use http;
 use futures;
 
-use super::{AsyncBody, FutureResponse, SyncBody};
+use async::{AsyncBody, FutureResponse};
+use sync::SyncBody;
 
 
 pub trait HttpBody {

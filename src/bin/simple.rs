@@ -2,8 +2,9 @@ extern crate aitch;
 extern crate futures;
 extern crate http;
 
-use aitch::{AsyncBody, AsyncHandlerFunc, FutureResponse, ResponseBuilder, SyncBody,
-            SyncHandlerFunc};
+use aitch::ResponseBuilder;
+use aitch::async::{AsyncBody, AsyncHandlerFunc, FutureResponse};
+use aitch::sync::{SyncBody, SyncHandlerFunc};
 use http::{Request, Response};
 
 

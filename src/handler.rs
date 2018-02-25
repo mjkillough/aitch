@@ -1,8 +1,8 @@
 use http;
 
-use super::{AsyncBody, FromHttpResponse, FutureResponse, HttpBody, IntoResponse, ResponseBuilder,
-            SyncBody};
-
+use super::{FromHttpResponse, HttpBody, IntoResponse, ResponseBuilder};
+use async::{AsyncBody, FutureResponse};
+use sync::SyncBody;
 
 pub trait Handler<Body, Resp>
 where

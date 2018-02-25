@@ -10,14 +10,26 @@ mod router;
 mod server;
 mod traits;
 
-pub use handler::{AsyncHandler, AsyncHandlerFunc, Handler, SyncHandler, SyncHandlerFunc};
+pub use handler::Handler;
 pub use router::SimpleRouter;
 pub use server::Server;
 pub use traits::{FromHttpResponse, HttpBody, IntoResponse};
 
-use futures::Future;
-
 pub type ResponseBuilder = http::response::Builder;
-pub type FutureResponse<Body> = Box<Future<Item = http::Response<Body>, Error = ()>>;
-pub type AsyncBody = hyper::Body;
-pub type SyncBody = Vec<u8>;
+
+pub mod sync {
+    pub type SyncBody = Vec<u8>;
+
+    pub use handler::{SyncHandler, SyncHandlerFunc};
+}
+
+pub mod async {
+    use futures::Future;
+    use hyper;
+    use http;
+
+    pub type AsyncBody = hyper::Body;
+    pub type FutureResponse<Body> = Box<Future<Item = http::Response<Body>, Error = ()>>;
+
+    pub use handler::{AsyncHandler, AsyncHandlerFunc};
+}

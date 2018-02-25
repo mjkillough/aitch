@@ -6,8 +6,9 @@ use futures::{self, Future, Stream};
 use http;
 use hyper;
 
-use super::{AsyncBody, AsyncHandler, FromHttpResponse, FutureResponse, Handler, HttpBody,
-            ResponseBuilder, SyncBody, SyncHandler};
+use super::{FromHttpResponse, Handler, HttpBody, ResponseBuilder};
+use async::{AsyncBody, AsyncHandler, FutureResponse};
+use sync::{SyncBody, SyncHandler};
 use errors::*;
 
 
