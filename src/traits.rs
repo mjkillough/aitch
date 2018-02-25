@@ -1,7 +1,7 @@
 use http;
 use futures;
 
-use super::{AsyncBody, FutureResponse};
+use super::{AsyncBody, FutureResponse, SyncBody};
 
 
 pub trait EmptyBody {
@@ -28,8 +28,8 @@ impl FromHttpResponse<AsyncBody> for FutureResponse<AsyncBody> {
     }
 }
 
-impl FromHttpResponse<Vec<u8>> for http::Response<Vec<u8>> {
-    fn from_http_response(resp: http::Response<Vec<u8>>) -> Self {
+impl FromHttpResponse<SyncBody> for http::Response<SyncBody> {
+    fn from_http_response(resp: http::Response<SyncBody>) -> Self {
         resp
     }
 }
@@ -39,18 +39,18 @@ pub trait IntoResponse<Resp> {
     fn into_response(self) -> Resp;
 }
 
-impl IntoResponse<http::Response<Vec<u8>>> for http::Response<Vec<u8>> {
-    fn into_response(self) -> http::Response<Vec<u8>> {
+impl IntoResponse<http::Response<SyncBody>> for http::Response<SyncBody> {
+    fn into_response(self) -> http::Response<SyncBody> {
         self
     }
 }
 
-impl IntoResponse<http::Response<Vec<u8>>> for http::Result<http::Response<Vec<u8>>> {
-    fn into_response(self) -> http::Response<Vec<u8>> {
+impl IntoResponse<http::Response<SyncBody>> for http::Result<http::Response<SyncBody>> {
+    fn into_response(self) -> http::Response<SyncBody> {
         self.unwrap_or_else(|_| {
             http::Response::builder()
                 .status(http::StatusCode::INTERNAL_SERVER_ERROR)
-                .body(Vec::new())
+                .body(SyncBody::empty())
                 .unwrap()
         })
     }
