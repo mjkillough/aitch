@@ -2,8 +2,8 @@ extern crate aitch;
 extern crate futures;
 extern crate http;
 
-use aitch::ResponseBuilder;
 use aitch::async::{AsyncBody, AsyncHandlerFunc, FutureResponse};
+use aitch::ResponseBuilder;
 use http::Request;
 
 fn handler(_req: &mut Request<AsyncBody>, mut resp: ResponseBuilder) -> FutureResponse<AsyncBody> {

@@ -1,8 +1,8 @@
 extern crate aitch;
 extern crate http;
 
-use aitch::ResponseBuilder;
 use aitch::sync::{SyncBody, SyncHandlerFunc};
+use aitch::ResponseBuilder;
 use http::{Request, Response};
 
 fn handler(

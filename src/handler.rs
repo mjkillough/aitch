@@ -1,7 +1,7 @@
 use http;
 
-use async::{AsyncBody, FutureResponse};
 use super::ResponseBuilder;
+use async::{AsyncBody, FutureResponse};
 use sync::SyncBody;
 use traits::{FromHttpResponse, HttpBody, IntoResponse};
 
@@ -16,20 +16,12 @@ where
 
 pub trait AsyncHandler: Handler<AsyncBody, FutureResponse<AsyncBody>> {}
 
-impl<H> AsyncHandler for H
-where
-    H: Handler<AsyncBody, FutureResponse<AsyncBody>>,
-{
-}
+impl<H> AsyncHandler for H where H: Handler<AsyncBody, FutureResponse<AsyncBody>> {}
 
 
 pub trait SyncHandler: Handler<SyncBody, http::Response<SyncBody>> {}
 
-impl<H> SyncHandler for H
-where
-    H: Handler<SyncBody, http::Response<SyncBody>>,
-{
-}
+impl<H> SyncHandler for H where H: Handler<SyncBody, http::Response<SyncBody>> {}
 
 
 // We have separate SyncHandlerFunc/AsyncHandlerFunc types because:

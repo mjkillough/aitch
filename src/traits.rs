@@ -1,5 +1,5 @@
-use http;
 use futures;
+use http;
 
 use async::{AsyncBody, FutureResponse};
 use sync::SyncBody;

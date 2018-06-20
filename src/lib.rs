@@ -24,8 +24,8 @@ pub mod sync {
 
 pub mod async {
     use futures::Future;
-    use hyper;
     use http;
+    use hyper;
 
     pub type AsyncBody = hyper::Body;
     pub type FutureResponse<Body> = Box<Future<Item = http::Response<Body>, Error = ()>>;
