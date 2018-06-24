@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use futures::{self, Future, IntoFuture, Stream};
+use futures::{Future, IntoFuture, Stream};
 use http;
 use hyper;
 

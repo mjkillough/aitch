@@ -1,8 +1,5 @@
-use std::ops::Deref;
-
-use futures::future::{self, FutureResult, IntoFuture};
+use futures::future;
 use futures::{self, stream, Future, Stream};
-use http;
 use hyper;
 
 use errors::*;
@@ -44,35 +41,3 @@ impl HttpBody for Vec<u8> {
         stream::once(Ok(self))
     }
 }
-
-// pub trait Responder<Body>
-// where
-//     Body: HttpBody,
-// {
-//     type Future: Future<Item = http::Response<Body>, Error = Error>;
-
-//     fn into_future(self) -> Self::Future;
-// }
-
-// impl<Body> Responder<Body> for http::Response<Body>
-// where
-//     Body: HttpBody,
-// {
-//     type Future = FutureResult<http::Response<Body>, Error>;
-
-//     fn into_future(self) -> Self::Future {
-//         future::ok(self)
-//     }
-// }
-
-// impl<T, Body> Responder<Body> for T
-// where
-//     T: IntoFuture<Item = http::Response<Body>, Error = Error>,
-//     Body: HttpBody,
-// {
-//     type Future = T;
-
-//     fn into_future(self) -> Self::Future {
-//         IntoFuture::into_future(self)
-//     }
-// }

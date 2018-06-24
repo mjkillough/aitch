@@ -1,46 +1,46 @@
 use std::collections::HashMap;
 
+use futures::IntoFuture;
 use http;
 
-use super::{Handler, ResponseBuilder};
-use traits::{FromHttpResponse, HttpBody};
+use traits::HttpBody;
+use {box_response, BoxedResponse, Handler, ResponseBuilder};
 
-
-pub struct SimpleRouter<Body, Resp>
+pub struct SimpleRouter<Body>
 where
-    Resp: FromHttpResponse<Body>,
     Body: HttpBody,
 {
-    handlers: HashMap<String, Box<Handler<Body, Resp>>>,
+    handlers: HashMap<String, Box<Handler<Body, BoxedResponse<Body>>>>,
 }
 
-impl<Body, Resp> SimpleRouter<Body, Resp>
+impl<Body> SimpleRouter<Body>
 where
-    Resp: FromHttpResponse<Body>,
-    Body: HttpBody,
+    Body: HttpBody + 'static,
 {
-    pub fn new() -> SimpleRouter<Body, Resp> {
+    pub fn new() -> SimpleRouter<Body> {
         SimpleRouter {
             handlers: HashMap::new(),
         }
     }
 
-    pub fn register_handler<S, H>(&mut self, pattern: S, handler: H)
+    pub fn register_handler<S, H, Resp>(&mut self, pattern: S, handler: H)
     where
         S: Into<String>,
         H: Handler<Body, Resp> + 'static,
+        Resp: IntoFuture<Item = http::Response<Body>, Error = http::Error> + 'static,
     {
         let pattern = pattern.into();
         if self.handlers.contains_key(&pattern) {
             panic!("SimpleRouter: Tried to register pattern twice: {}", pattern);
         }
-        self.handlers.insert(pattern, Box::new(handler));
+        self.handlers
+            .insert(pattern, Box::new(box_response(handler)));
     }
 
     pub fn handler(
         &self,
         req: &http::Request<Body>,
-    ) -> Option<(&String, &Box<Handler<Body, Resp>>)> {
+    ) -> Option<(&String, &Box<Handler<Body, BoxedResponse<Body>>>)> {
         self.handlers
             .iter()
             .filter(|&(pattern, _)| req.uri().path().starts_with(pattern))
@@ -48,18 +48,21 @@ where
     }
 }
 
-impl<Body, Resp> Handler<Body, Resp> for SimpleRouter<Body, Resp>
+impl<Body> Handler<Body, BoxedResponse<Body>> for SimpleRouter<Body>
 where
-    Resp: FromHttpResponse<Body>,
-    Body: HttpBody,
+    Body: HttpBody + 'static,
 {
-    fn handle(&self, req: &mut http::Request<Body>, mut resp: ResponseBuilder) -> Resp {
+    fn handle(
+        &self,
+        req: &mut http::Request<Body>,
+        mut resp: ResponseBuilder,
+    ) -> BoxedResponse<Body> {
         match self.handler(req) {
             Some((_, handler)) => handler.handle(req, resp),
-            None => Resp::from_http_response(
+            None => Box::new(
                 resp.status(http::StatusCode::NOT_FOUND)
                     .body(Body::empty())
-                    .unwrap(),
+                    .into_future(),
             ),
         }
     }

@@ -1,7 +1,6 @@
 use futures::IntoFuture;
 use http;
 
-use errors::*;
 use traits::HttpBody;
 use ResponseBuilder;
 
