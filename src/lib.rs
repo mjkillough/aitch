@@ -6,7 +6,6 @@ extern crate hyper;
 
 pub mod errors;
 mod handler;
-// pub mod middleware;
 mod router;
 mod server;
 pub mod traits;
