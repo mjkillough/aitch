@@ -14,5 +14,5 @@ fn handler(
 fn main() {
     let addr = "127.0.0.1:3000".parse().unwrap();
     println!("Listening on http://{}", addr);
-    aitch::Server::new(addr, handler).run().unwrap();
+    aitch::Server::new(addr, handler).run();
 }

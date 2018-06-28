@@ -23,7 +23,7 @@ fn main() {
     router.register_handler("/handler1", handler1);
     router.register_handler("/handler2", handler2);
 
-    let addr = "127.0.0.1:3000".parse().unwrap();
-    println!("Listening on http://{}", addr);
-    aitch::Server::new(addr, router).run().unwrap();
+    // let addr = "127.0.0.1:3000".parse().unwrap();
+    // println!("Listening on http://{}", addr);
+    // aitch::Server::new(addr, router).run().unwrap();
 }

@@ -7,6 +7,5 @@ authors = ["Michael Killough <michaeljkillough@gmail.com>"]
 
 [dependencies]
 futures = "0.1"
-hyper = { git = "https://github.com/hyperium/hyper/", features = ["compat"] }
-http = "*"
-error-chain = "*"
+hyper = "0.12"
+http = "0.1"

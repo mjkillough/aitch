@@ -5,6 +5,7 @@ use std::sync::Arc;
 use futures::{Future, IntoFuture, Stream};
 use http;
 use hyper;
+use hyper::server::Server as HyperServer;
 
 use errors::*;
 use traits::HttpBody;
@@ -12,9 +13,12 @@ use Handler;
 
 pub struct Server<H, Body, Resp>
 where
-    H: Handler<Body, Resp> + 'static,
-    Body: HttpBody + 'static,
-    Resp: IntoFuture<Item = http::Response<Body>, Error = http::Error> + 'static,
+    H: Handler<Body, Resp> + Send + Sync + 'static,
+    Body: HttpBody + Send + 'static,
+    Body::Future: Send,
+    Body::Stream: Send,
+    Resp: IntoFuture<Item = http::Response<Body>, Error = http::Error> + Send + 'static,
+    Resp::Future: Send,
 {
     addr: SocketAddr,
     handler: Arc<H>,
@@ -23,9 +27,12 @@ where
 
 impl<H, Body, Resp> Server<H, Body, Resp>
 where
-    H: Handler<Body, Resp> + 'static,
-    Body: HttpBody + 'static,
-    Resp: IntoFuture<Item = http::Response<Body>, Error = http::Error> + 'static,
+    H: Handler<Body, Resp> + Send + Sync + 'static,
+    Body: HttpBody + Send + 'static,
+    Body::Future: Send,
+    Body::Stream: Send,
+    Resp: IntoFuture<Item = http::Response<Body>, Error = http::Error> + Send + 'static,
+    Resp::Future: Send,
 {
     pub fn new(addr: SocketAddr, handler: H) -> Server<H, Body, Resp> {
         let handler = Arc::new(handler);
@@ -37,42 +44,50 @@ where
         }
     }
 
-    pub fn run(self) -> Result<()> {
+    pub fn run(self) {
         let addr = self.addr;
-        hyper::server::Http::new()
-            .bind(&addr, move || {
-                Ok(Service {
-                    handler: self.handler.clone(),
-                    marker: PhantomData,
-                })
-            })?
-            .run()?;
-        Ok(())
+        let new_service = move || -> Result<Service<H, Body, Resp>> {
+            Ok(Service {
+                handler: self.handler.clone(),
+                marker: PhantomData,
+            })
+        };
+        let server = HyperServer::bind(&addr).serve(new_service);
+
+        hyper::rt::run(server.map_err(|e| {
+            eprintln!("server error: {}", e);
+        }));
     }
 }
 
 struct Service<H, Body, Resp>
 where
-    H: Handler<Body, Resp> + 'static,
-    Body: HttpBody + 'static,
-    Resp: IntoFuture<Item = http::Response<Body>, Error = http::Error> + 'static,
+    H: Handler<Body, Resp> + Send + Sync + 'static,
+    Body: HttpBody + Send + 'static,
+    Body::Future: Send,
+    Body::Stream: Send,
+    Resp: IntoFuture<Item = http::Response<Body>, Error = http::Error> + Send + 'static,
+    Resp::Future: Send,
 {
     handler: Arc<H>,
     marker: PhantomData<(Body, Resp)>,
 }
 
-impl<H, Body, Resp> hyper::server::Service for Service<H, Body, Resp>
+impl<H, Body, Resp> hyper::service::Service for Service<H, Body, Resp>
 where
-    H: Handler<Body, Resp> + 'static,
-    Body: HttpBody + 'static,
-    Resp: IntoFuture<Item = http::Response<Body>, Error = http::Error> + 'static,
+    H: Handler<Body, Resp> + Send + Sync + 'static,
+    Body: HttpBody + Send + 'static,
+    Body::Future: Send,
+    Body::Stream: Send,
+    Resp: IntoFuture<Item = http::Response<Body>, Error = http::Error> + Send + 'static,
+    Resp::Future: Send,
 {
-    type Request = hyper::Request;
-    type Response = hyper::Response;
-    type Error = hyper::Error;
-    type Future = Box<Future<Item = Self::Response, Error = Self::Error>>;
+    type ReqBody = hyper::Body;
+    type ResBody = hyper::Body;
+    type Error = Error;
+    type Future = Box<Future<Item = hyper::Response<hyper::Body>, Error = Self::Error> + Send>;
 
-    fn call(&self, req: hyper::Request) -> Self::Future {
+    fn call(&mut self, req: hyper::Request<hyper::Body>) -> Self::Future {
         let handler = self.handler.clone();
         let req: http::Request<hyper::Body> = req.into();
         let (parts, body) = req.into_parts();
@@ -92,10 +107,7 @@ where
                     .map_err(Error::from)
             })
             .and_then(map_response_body)
-            .map(hyper::Response::from)
-            // This should never happen. There isn't really a more sensible
-            // `hyper::Error` to return either.
-            .map_err(|_| hyper::Error::Timeout);
+            .map(hyper::Response::from);
         Box::new(fut)
     }
 }
