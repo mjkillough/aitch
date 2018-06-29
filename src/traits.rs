@@ -1,12 +1,8 @@
 use bytes::Bytes;
-use futures::{self, future, stream, Future, Stream};
+use futures::{stream, Future, Stream};
 use hyper;
 
 use errors::*;
-
-fn chunk_to_vec(chunk: hyper::Chunk) -> Vec<u8> {
-    chunk.to_vec()
-}
 
 pub trait Body
 where
