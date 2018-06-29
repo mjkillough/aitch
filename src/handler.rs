@@ -1,20 +1,20 @@
 use futures::IntoFuture;
 use http;
 
-use traits::HttpBody;
+use Body as BodyTrait;
 use ResponseBuilder;
 
 pub trait Handler<Body, Resp>
 where
     Resp: IntoFuture<Item = http::Response<Body>, Error = http::Error>,
-    Body: HttpBody,
+    Body: BodyTrait,
 {
     fn handle(&self, &mut http::Request<Body>, ResponseBuilder) -> Resp;
 }
 
 impl<Func, Body, Resp> Handler<Body, Resp> for Func
 where
-    Body: HttpBody,
+    Body: BodyTrait,
     Resp: IntoFuture<Item = http::Response<Body>, Error = http::Error>,
     Func: Fn(&mut http::Request<Body>, ResponseBuilder) -> Resp,
 {
@@ -51,7 +51,7 @@ mod test {
 
     fn request<Body>() -> http::Request<Body>
     where
-        Body: HttpBody,
+        Body: BodyTrait,
     {
         http::Request::builder().body(Body::empty()).unwrap()
     }

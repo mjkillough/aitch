@@ -1,3 +1,4 @@
+extern crate bytes;
 extern crate futures;
 extern crate http;
 extern crate hyper;
@@ -6,13 +7,15 @@ pub mod errors;
 mod handler;
 mod router;
 mod server;
-pub mod traits;
+mod traits;
 
 pub use handler::Handler;
 pub use router::SimpleRouter;
 pub use server::Server;
 
 use futures::{Future, IntoFuture};
+
+pub use traits::Body;
 
 pub type ResponseBuilder = http::response::Builder;
 
@@ -21,7 +24,7 @@ type BoxedResponse<Body> = Box<Future<Item = http::Response<Body>, Error = http:
 pub fn box_response<H, Body, Resp>(handler: H) -> impl Handler<Body, BoxedResponse<Body>>
 where
     H: Handler<Body, Resp>,
-    Body: traits::HttpBody,
+    Body: traits::Body,
     Resp: IntoFuture<Item = http::Response<Body>, Error = http::Error> + 'static,
 {
     move |req: &mut http::Request<Body>, resp: ResponseBuilder| {

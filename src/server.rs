@@ -8,15 +8,12 @@ use hyper;
 use hyper::server::Server as HyperServer;
 
 use errors::*;
-use traits::HttpBody;
-use Handler;
+use {Body as BodyTrait, Handler};
 
 pub struct Server<H, Body, Resp>
 where
     H: Handler<Body, Resp> + Send + Sync + 'static,
-    Body: HttpBody + Send + 'static,
-    Body::Future: Send,
-    Body::Stream: Send,
+    Body: BodyTrait + Send + 'static,
     Resp: IntoFuture<Item = http::Response<Body>, Error = http::Error> + Send + 'static,
     Resp::Future: Send,
 {
@@ -28,9 +25,7 @@ where
 impl<H, Body, Resp> Server<H, Body, Resp>
 where
     H: Handler<Body, Resp> + Send + Sync + 'static,
-    Body: HttpBody + Send + 'static,
-    Body::Future: Send,
-    Body::Stream: Send,
+    Body: BodyTrait + Send + 'static,
     Resp: IntoFuture<Item = http::Response<Body>, Error = http::Error> + Send + 'static,
     Resp::Future: Send,
 {
@@ -63,9 +58,7 @@ where
 struct Service<H, Body, Resp>
 where
     H: Handler<Body, Resp> + Send + Sync + 'static,
-    Body: HttpBody + Send + 'static,
-    Body::Future: Send,
-    Body::Stream: Send,
+    Body: BodyTrait + Send + 'static,
     Resp: IntoFuture<Item = http::Response<Body>, Error = http::Error> + Send + 'static,
     Resp::Future: Send,
 {
@@ -76,9 +69,7 @@ where
 impl<H, Body, Resp> hyper::service::Service for Service<H, Body, Resp>
 where
     H: Handler<Body, Resp> + Send + Sync + 'static,
-    Body: HttpBody + Send + 'static,
-    Body::Future: Send,
-    Body::Stream: Send,
+    Body: BodyTrait + Send + 'static,
     Resp: IntoFuture<Item = http::Response<Body>, Error = http::Error> + Send + 'static,
     Resp::Future: Send,
 {
@@ -91,7 +82,8 @@ where
         let handler = self.handler.clone();
         let req: http::Request<hyper::Body> = req.into();
         let (parts, body) = req.into_parts();
-        let fut = Body::from_hyper_body(body)
+        let body_stream = body.map(hyper::Chunk::into_bytes).map_err(Error::from);
+        let fut = BodyTrait::from_stream(body_stream)
             .and_then(move |body| {
                 let mut req = http::Request::from_parts(parts, body);
                 let builder = http::Response::builder();
@@ -116,7 +108,7 @@ fn map_response_body<Body>(
     resp: http::Response<Body>,
 ) -> impl Future<Item = http::Response<hyper::Body>, Error = Error>
 where
-    Body: HttpBody,
+    Body: BodyTrait,
 {
     let (parts, body) = resp.into_parts();
     body.into_stream().concat2().map(move |buffer| {

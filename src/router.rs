@@ -3,19 +3,18 @@ use std::collections::HashMap;
 use futures::IntoFuture;
 use http;
 
-use traits::HttpBody;
-use {box_response, BoxedResponse, Handler, ResponseBuilder};
+use {box_response, Body as BodyTrait, BoxedResponse, Handler, ResponseBuilder};
 
 pub struct SimpleRouter<Body>
 where
-    Body: HttpBody,
+    Body: BodyTrait,
 {
     handlers: HashMap<String, Box<Handler<Body, BoxedResponse<Body>>>>,
 }
 
 impl<Body> SimpleRouter<Body>
 where
-    Body: HttpBody + 'static,
+    Body: BodyTrait + 'static,
 {
     pub fn new() -> SimpleRouter<Body> {
         SimpleRouter {
@@ -50,7 +49,7 @@ where
 
 impl<Body> Handler<Body, BoxedResponse<Body>> for SimpleRouter<Body>
 where
-    Body: HttpBody + 'static,
+    Body: BodyTrait + 'static,
 {
     fn handle(
         &self,
