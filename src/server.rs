@@ -1,4 +1,3 @@
-use std::error::Error as StdError;
 use std::marker::PhantomData;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -9,8 +8,7 @@ use http;
 use hyper;
 use hyper::server::Server as HyperServer;
 
-use errors::*;
-use {Body, Handler, Responder};
+use {Body, BoxedStream, Error, Handler, Responder, Result};
 
 pub struct Server<H, ReqBody, Resp, RespBody>
 where
@@ -84,7 +82,7 @@ where
         let handler = self.handler.clone();
         let req: http::Request<hyper::Body> = req.into();
         let (parts, body) = req.into_parts();
-        let body_stream = body.map(hyper::Chunk::into_bytes).map_err(Error::from);
+        let body_stream = body.map(hyper::Chunk::into_bytes).map_err(Box::from);
         let fut = Body::from_stream(body_stream)
             .and_then(move |body| {
                 let mut req = http::Request::from_parts(parts, body);
@@ -92,28 +90,21 @@ where
                 handler
                     .handle(&mut req, builder)
                     .into_response()
-                    .map_err(Error::from)
+                    .map_err(Box::from)
             })
             .map(map_response_body)
-            .or_else(|_| {
-                http::Response::builder()
-                    .status(http::StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(hyper::Body::empty())
-                    .map_err(Error::from)
-            });
+            .or_else(|_| internal_server_error());
         Box::new(fut)
     }
 }
 
-type HyperBodyStream =
-    Box<Stream<Item = hyper::Chunk, Error = Box<StdError + Send + Sync>> + Send + 'static>;
+fn internal_server_error() -> Result<http::Response<hyper::Body>> {
+    let resp = http::Response::builder()
+        .status(http::StatusCode::INTERNAL_SERVER_ERROR)
+        .body(hyper::Body::empty());
+    Ok(resp?)
+}
 
-fn map_response_body(
-    resp: http::Response<Box<Stream<Item = Bytes, Error = http::Error> + Send>>,
-) -> http::Response<hyper::Body> {
-    let (parts, body) = resp.into_parts();
-    let stream = body.map(|bytes| hyper::Chunk::from(bytes))
-        .map_err(|error| Box::new(error) as Box<StdError + Send + Sync>);
-    let hyper_body = hyper::Body::from(Box::new(stream) as HyperBodyStream);
-    http::Response::from_parts(parts, hyper_body)
+fn map_response_body(resp: http::Response<BoxedStream>) -> http::Response<hyper::Body> {
+    resp.map(hyper::Body::wrap_stream)
 }
