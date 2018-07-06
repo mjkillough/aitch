@@ -64,10 +64,7 @@ where
 {
     fn into_response(self) -> BoxedResponse {
         let fut = self.into_future()
-            .map(|resp| {
-                let (parts, body) = resp.into_parts();
-                http::Response::from_parts(parts, body.into_stream())
-            })
+            .map(|resp| resp.map(|body| body.into_stream()))
             .map_err(|error| error.into());
         Box::new(fut) as BoxedResponse
     }

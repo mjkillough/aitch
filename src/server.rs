@@ -2,7 +2,6 @@ use std::marker::PhantomData;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use bytes::Bytes;
 use futures::{Future, Stream};
 use http;
 use hyper;
@@ -80,22 +79,26 @@ where
 
     fn call(&mut self, req: hyper::Request<hyper::Body>) -> Self::Future {
         let handler = self.handler.clone();
-        let req: http::Request<hyper::Body> = req.into();
-        let (parts, body) = req.into_parts();
-        let body_stream = body.map(hyper::Chunk::into_bytes).map_err(Box::from);
-        let fut = Body::from_stream(body_stream)
-            .and_then(move |body| {
-                let mut req = http::Request::from_parts(parts, body);
-                let builder = http::Response::builder();
-                handler
-                    .handle(&mut req, builder)
-                    .into_response()
-                    .map_err(Box::from)
-            })
+        let builder = http::Response::builder();
+
+        let fut = map_request_body(req)
+            .and_then(move |mut req| handler.handle(&mut req, builder).into_response())
             .map(map_response_body)
             .or_else(|_| internal_server_error());
+
         Box::new(fut)
     }
+}
+
+fn map_request_body<ReqBody>(
+    req: http::Request<hyper::Body>,
+) -> impl Future<Item = http::Request<ReqBody>, Error = Error>
+where
+    ReqBody: Body,
+{
+    let (parts, body) = req.into_parts();
+    let body_stream = body.map(hyper::Chunk::into_bytes).map_err(Box::from);
+    Body::from_stream(body_stream).map(move |body| http::Request::from_parts(parts, body))
 }
 
 fn internal_server_error() -> Result<http::Response<hyper::Body>> {
