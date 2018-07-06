@@ -3,12 +3,7 @@ use std::collections::HashMap;
 use futures::IntoFuture;
 use http;
 
-use {box_response, Body as BodyTrait, BoxedResponse, Handler, ResponseBuilder};
-
-pub struct SimpleRouter<Body>
-where
-    Body: BodyTrait,
-{
+pub struct SimpleRouter {
     handlers: HashMap<String, Box<Handler<Body, BoxedResponse<Body>>>>,
 }
 

@@ -7,7 +7,7 @@ use http;
 use hyper;
 use hyper::server::Server as HyperServer;
 
-use {Body, BoxedStream, Error, Handler, Responder, Result};
+use {Body, BodyStream, Error, Handler, Responder, Result};
 
 pub struct Server<H, ReqBody, Resp, RespBody>
 where
@@ -78,6 +78,6 @@ fn internal_server_error() -> Result<http::Response<hyper::Body>> {
     Ok(resp?)
 }
 
-fn map_response_body(resp: http::Response<BoxedStream>) -> http::Response<hyper::Body> {
+fn map_response_body(resp: http::Response<BodyStream>) -> http::Response<hyper::Body> {
     resp.map(hyper::Body::wrap_stream)
 }
