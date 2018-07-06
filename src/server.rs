@@ -39,54 +39,24 @@ where
     }
 
     pub fn run(self) {
-        let addr = self.addr;
-        let new_service = move || -> Result<Service<H, ReqBody, Resp, RespBody>> {
-            Ok(Service {
-                handler: self.handler.clone(),
-                marker: PhantomData,
+        let handler = self.handler;
+        let new_service = move || {
+            let handler = handler.clone();
+            hyper::service::service_fn(move |req| {
+                let handler = handler.clone();
+                let builder = http::Response::builder();
+
+                map_request_body(req)
+                    .and_then(move |mut req| handler.handle(&mut req, builder).into_response())
+                    .map(map_response_body)
+                    .or_else(|_| internal_server_error())
             })
         };
-        let server = HyperServer::bind(&addr).serve(new_service);
 
+        let server = HyperServer::bind(&self.addr).serve(new_service);
         hyper::rt::run(server.map_err(|e| {
             eprintln!("server error: {}", e);
         }));
-    }
-}
-
-struct Service<H, ReqBody, Resp, RespBody>
-where
-    H: Handler<ReqBody, Resp, RespBody>,
-    ReqBody: Body,
-    Resp: Responder<RespBody>,
-    RespBody: Body,
-{
-    handler: Arc<H>,
-    marker: PhantomData<(ReqBody, Resp, RespBody)>,
-}
-
-impl<H, ReqBody, Resp, RespBody> hyper::service::Service for Service<H, ReqBody, Resp, RespBody>
-where
-    H: Handler<ReqBody, Resp, RespBody>,
-    ReqBody: Body,
-    Resp: Responder<RespBody>,
-    RespBody: Body,
-{
-    type ReqBody = hyper::Body;
-    type ResBody = hyper::Body;
-    type Error = Error;
-    type Future = Box<Future<Item = hyper::Response<hyper::Body>, Error = Self::Error> + Send>;
-
-    fn call(&mut self, req: hyper::Request<hyper::Body>) -> Self::Future {
-        let handler = self.handler.clone();
-        let builder = http::Response::builder();
-
-        let fut = map_request_body(req)
-            .and_then(move |mut req| handler.handle(&mut req, builder).into_response())
-            .map(map_response_body)
-            .or_else(|_| internal_server_error());
-
-        Box::new(fut)
     }
 }
 
