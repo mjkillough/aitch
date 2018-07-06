@@ -4,7 +4,7 @@ extern crate http;
 use aitch::{Responder, ResponseBuilder};
 use http::Request;
 
-fn handler(_req: &mut Request<Vec<u8>>, mut resp: ResponseBuilder) -> impl Responder<Vec<u8>> {
+fn handler(_req: Request<Vec<u8>>, mut resp: ResponseBuilder) -> impl Responder<Vec<u8>> {
     resp.body("Hello, world!".as_bytes().to_owned())
 }
 

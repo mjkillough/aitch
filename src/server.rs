@@ -47,7 +47,7 @@ where
                 let builder = http::Response::builder();
 
                 map_request_body(req)
-                    .and_then(move |mut req| handler.handle(&mut req, builder).into_response())
+                    .and_then(move |req| handler.handle(req, builder).into_response())
                     .map(map_response_body)
                     .or_else(|_| internal_server_error())
             })
