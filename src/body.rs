@@ -43,3 +43,7 @@ impl Body for BodyStream {
         self
     }
 }
+
+pub fn empty_body() -> BodyStream {
+    Box::new(stream::once(Ok(Bytes::new())))
+}
