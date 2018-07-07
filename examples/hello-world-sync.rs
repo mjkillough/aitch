@@ -11,5 +11,5 @@ fn handler(_req: Request<Vec<u8>>, mut resp: ResponseBuilder) -> impl Responder 
 fn main() {
     let addr = "127.0.0.1:3000".parse().unwrap();
     println!("Listening on http://{}", addr);
-    aitch::Server::new(addr, handler).run();
+    aitch::Server::new(addr, aitch::logging_handler(handler)).run();
 }

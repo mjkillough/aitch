@@ -2,7 +2,7 @@ use http;
 
 use {Body, BodyStream, Responder, ResponseBuilder};
 
-pub trait Handler<ReqBody = BodyStream>
+pub trait Handler<ReqBody>
 where
     ReqBody: Body,
     Self: Send + Sync + 'static,
@@ -24,15 +24,3 @@ where
         (self)(req, resp)
     }
 }
-
-// pub trait GenericHandler: Send + Sync + 'static {
-//     type Resp: Responder;
-
-//     fn handle(&self, http::Request<BodyStream>, ResponseBuilder) -> Self::Resp;
-// }
-
-// impl<T> GenericHandler for T
-// where
-//     T: Handler<BodyStream>,
-// {
-// }
