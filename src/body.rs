@@ -1,7 +1,7 @@
 use bytes::Bytes;
-use futures::{future, stream, Future, Stream};
+use futures::{self, future, stream, Future, Stream};
 
-use Error;
+use {Error, Result};
 
 pub trait Body
 where
@@ -15,10 +15,10 @@ where
 }
 
 impl Body for () {
-    type Future = Box<Future<Item = Self, Error = Error> + Send>;
+    type Future = future::FutureResult<(), Error>;
 
     fn from_stream(_: BodyStream) -> Self::Future {
-        Box::new(future::ok(()))
+        future::ok(())
     }
 
     fn into_stream(self) -> BodyStream {
@@ -27,10 +27,10 @@ impl Body for () {
 }
 
 impl Body for Vec<u8> {
-    type Future = Box<Future<Item = Self, Error = Error> + Send>;
+    type Future = future::Map<stream::Concat2<BodyStream>, fn(Bytes) -> Vec<u8>>;
 
     fn from_stream(stream: BodyStream) -> Self::Future {
-        Box::new(stream.concat2().map(|bytes| bytes.to_vec()))
+        stream.concat2().map(|bytes| bytes.to_vec())
     }
 
     fn into_stream(self) -> BodyStream {
@@ -40,15 +40,15 @@ impl Body for Vec<u8> {
 }
 
 impl Body for String {
-    type Future = Box<Future<Item = Self, Error = Error> + Send>;
+    type Future =
+        futures::AndThen<stream::Concat2<BodyStream>, Result<String>, fn(Bytes) -> Result<String>>;
 
     fn from_stream(stream: BodyStream) -> Self::Future {
-        let fut = stream.concat2().and_then(|bytes| {
+        stream.concat2().and_then(|bytes| {
             let vec = bytes.to_vec();
             let string = String::from_utf8(vec)?;
             Ok(string)
-        });
-        Box::new(fut)
+        })
     }
 
     fn into_stream(self) -> BodyStream {
@@ -60,10 +60,10 @@ impl Body for String {
 pub type BodyStream = Box<Stream<Item = Bytes, Error = Error> + Send>;
 
 impl Body for BodyStream {
-    type Future = Box<Future<Item = Self, Error = Error> + Send>;
+    type Future = future::FutureResult<BodyStream, Error>;
 
     fn from_stream(stream: BodyStream) -> Self::Future {
-        Box::new(future::ok(stream))
+        future::ok(stream)
     }
 
     fn into_stream(self) -> BodyStream {
