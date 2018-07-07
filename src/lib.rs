@@ -9,7 +9,7 @@ mod body;
 mod handler;
 pub mod middlewares;
 mod responder;
-mod server;
+pub mod servers;
 
 use std::error::Error as StdError;
 
@@ -18,7 +18,6 @@ use futures::Future;
 pub use body::{empty_body, Body, BodyStream};
 pub use handler::{box_handler, BoxedHandler, Handler};
 pub use responder::Responder;
-pub use server::Server;
 
 pub type ResponseBuilder = http::response::Builder;
 
