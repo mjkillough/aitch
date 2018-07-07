@@ -26,6 +26,18 @@ impl Body for () {
     }
 }
 
+impl Body for Bytes {
+    type Future = stream::Concat2<BodyStream>;
+
+    fn from_stream(stream: BodyStream) -> Self::Future {
+        stream.concat2()
+    }
+
+    fn into_stream(self) -> BodyStream {
+        Box::new(stream::once(Ok(self)))
+    }
+}
+
 impl Body for Vec<u8> {
     type Future = future::Map<stream::Concat2<BodyStream>, fn(Bytes) -> Vec<u8>>;
 
