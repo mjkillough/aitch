@@ -9,26 +9,22 @@ use hyper::server::Server as HyperServer;
 
 use {Body, BodyStream, Error, Handler, Responder, Result};
 
-pub struct Server<H, ReqBody, Resp, RespBody>
+pub struct Server<H, ReqBody>
 where
-    H: Handler<ReqBody, Resp, RespBody>,
+    H: Handler<ReqBody>,
     ReqBody: Body,
-    Resp: Responder<RespBody>,
-    RespBody: Body,
 {
     addr: SocketAddr,
     handler: Arc<H>,
-    marker: PhantomData<(ReqBody, Resp, RespBody)>,
+    marker: PhantomData<ReqBody>,
 }
 
-impl<H, ReqBody, Resp, RespBody> Server<H, ReqBody, Resp, RespBody>
+impl<H, ReqBody> Server<H, ReqBody>
 where
-    H: Handler<ReqBody, Resp, RespBody>,
+    H: Handler<ReqBody>,
     ReqBody: Body,
-    Resp: Responder<RespBody>,
-    RespBody: Body,
 {
-    pub fn new(addr: SocketAddr, handler: H) -> Server<H, ReqBody, Resp, RespBody> {
+    pub fn new(addr: SocketAddr, handler: H) -> Server<H, ReqBody> {
         let handler = Arc::new(handler);
         let marker = PhantomData;
         Server {

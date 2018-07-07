@@ -3,32 +3,30 @@ use std::collections::HashMap;
 use futures::IntoFuture;
 use http;
 
+use {genericify, Body, BodyStream, Handler};
+
 pub struct SimpleRouter {
-    handlers: HashMap<String, Box<Handler<Body, BoxedResponse<Body>>>>,
+    handlers: HashMap<String, Box<Handler<BodyStream>>>,
 }
 
-impl<Body> SimpleRouter<Body>
-where
-    Body: BodyTrait + 'static,
-{
-    pub fn new() -> SimpleRouter<Body> {
+impl SimpleRouter {
+    pub fn new() -> SimpleRouter {
         SimpleRouter {
             handlers: HashMap::new(),
         }
     }
 
-    pub fn register_handler<S, H, Resp>(&mut self, pattern: S, handler: H)
+    pub fn register_handler<S, H, ReqBody>(&mut self, pattern: S, handler: H)
     where
         S: Into<String>,
-        H: Handler<Body, Resp> + 'static,
-        Resp: IntoFuture<Item = http::Response<Body>, Error = http::Error> + 'static,
+        H: Handler<ReqBody>,
+        ReqBody: Body,
     {
         let pattern = pattern.into();
         if self.handlers.contains_key(&pattern) {
             panic!("SimpleRouter: Tried to register pattern twice: {}", pattern);
         }
-        self.handlers
-            .insert(pattern, Box::new(box_response(handler)));
+        self.handlers.insert(pattern, Box::new(genericify(handler)));
     }
 
     pub fn handler(
@@ -42,16 +40,12 @@ where
     }
 }
 
-impl<Body> Handler<Body, BoxedResponse<Body>> for SimpleRouter<Body>
+impl<ReqBody> Handler<ReqBody> for SimpleRouter
 where
-    Body: BodyTrait + 'static,
+    ReqBody: ReqBody,
 {
-    fn handle(
-        &self,
-        req: &mut http::Request<Body>,
-        mut resp: ResponseBuilder,
-    ) -> BoxedResponse<Body> {
-        match self.handler(req) {
+    fn handle(&self, req: http::Request<ReqBody>, mut resp: ResponseBuilder) -> impl Responder {
+        match self.handler(&req) {
             Some((_, handler)) => handler.handle(req, resp),
             None => Box::new(
                 resp.status(http::StatusCode::NOT_FOUND)
