@@ -5,7 +5,9 @@ extern crate futures;
 extern crate http;
 extern crate hyper;
 
+#[cfg(feature = "json")]
 extern crate serde;
+#[cfg(feature = "json")]
 extern crate serde_json;
 
 mod body;
