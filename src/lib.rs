@@ -5,8 +5,13 @@ extern crate futures;
 extern crate http;
 extern crate hyper;
 
+extern crate serde;
+extern crate serde_json;
+
 mod body;
 mod handler;
+#[cfg(feature = "json")]
+mod json;
 pub mod middlewares;
 mod responder;
 pub mod servers;
@@ -18,6 +23,9 @@ use futures::Future;
 pub use body::{empty_body, Body, BodyStream};
 pub use handler::{box_handler, BoxedHandler, Handler};
 pub use responder::Responder;
+
+#[cfg(feature = "json")]
+pub use json::Json;
 
 pub type ResponseBuilder = http::response::Builder;
 
