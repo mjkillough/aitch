@@ -5,7 +5,7 @@ use aitch::{middlewares, Responder, ResponseBuilder};
 use http::Request;
 
 fn handler(_req: Request<Vec<u8>>, mut resp: ResponseBuilder) -> impl Responder {
-    resp.body("Hello, world!".as_bytes().to_owned())
+    resp.body("Hello, world!".to_owned())
 }
 
 fn main() {

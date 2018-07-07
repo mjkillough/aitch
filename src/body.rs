@@ -28,6 +28,25 @@ impl Body for Vec<u8> {
     }
 }
 
+impl Body for String {
+    fn from_stream<S>(stream: S) -> Box<Future<Item = Self, Error = Error> + Send>
+    where
+        S: Stream<Item = Bytes, Error = Error> + Send + 'static,
+    {
+        let fut = stream.concat2().and_then(|bytes| {
+            let vec = bytes.to_vec();
+            let string = String::from_utf8(vec)?;
+            Ok(string)
+        });
+        Box::new(fut)
+    }
+
+    fn into_stream(self) -> BodyStream {
+        let bytes = Bytes::from(self);
+        Box::new(stream::once(Ok(bytes)))
+    }
+}
+
 pub type BodyStream = Box<Stream<Item = Bytes, Error = Error> + Send>;
 
 impl Body for BodyStream {

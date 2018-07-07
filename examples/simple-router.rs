@@ -5,11 +5,11 @@ use aitch::{middlewares, Responder, ResponseBuilder};
 use http::Request;
 
 fn handler1(_req: Request<Vec<u8>>, mut resp: ResponseBuilder) -> impl Responder {
-    resp.body("Handler 1!".as_bytes().to_owned())
+    resp.body("Handler 1!".to_owned())
 }
 
 fn handler2(_req: Request<Vec<u8>>, mut resp: ResponseBuilder) -> impl Responder {
-    resp.body("Handler 2!".as_bytes().to_owned())
+    resp.body("Handler 2!".to_owned())
 }
 
 fn main() {

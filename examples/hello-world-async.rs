@@ -7,7 +7,7 @@ use futures::IntoFuture;
 use http::Request;
 
 fn handler(_req: Request<Vec<u8>>, mut resp: ResponseBuilder) -> impl Responder {
-    let vec = "Hello from the future!".as_bytes().to_owned();
+    let vec = "Hello from the future!".to_owned();
     resp.body(vec).into_future()
 }
 
