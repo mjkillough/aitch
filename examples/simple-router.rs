@@ -4,11 +4,11 @@ extern crate http;
 use aitch::{middlewares, Responder, ResponseBuilder};
 use http::Request;
 
-fn handler1(_req: Request<Vec<u8>>, mut resp: ResponseBuilder) -> impl Responder {
+fn handler1(_req: Request<()>, mut resp: ResponseBuilder) -> impl Responder {
     resp.body("Handler 1!".to_owned())
 }
 
-fn handler2(_req: Request<Vec<u8>>, mut resp: ResponseBuilder) -> impl Responder {
+fn handler2(_req: Request<()>, mut resp: ResponseBuilder) -> impl Responder {
     resp.body("Handler 2!".to_owned())
 }
 

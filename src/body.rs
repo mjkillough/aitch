@@ -14,6 +14,19 @@ where
     fn into_stream(self) -> BodyStream;
 }
 
+impl Body for () {
+    fn from_stream<S>(_: S) -> Box<Future<Item = Self, Error = Error> + Send>
+    where
+        S: Stream<Item = Bytes, Error = Error> + Send + 'static,
+    {
+        Box::new(future::ok(()))
+    }
+
+    fn into_stream(self) -> BodyStream {
+        empty_body()
+    }
+}
+
 impl Body for Vec<u8> {
     fn from_stream<S>(stream: S) -> Box<Future<Item = Self, Error = Error> + Send>
     where
