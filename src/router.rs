@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use futures::IntoFuture;
 use http;
 
 use {

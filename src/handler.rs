@@ -1,6 +1,6 @@
 use http;
 
-use {Body, BodyStream, Responder, ResponseBuilder};
+use {Body, Responder, ResponseBuilder};
 
 pub trait Handler<ReqBody>
 where

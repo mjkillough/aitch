@@ -1,3 +1,5 @@
+#![deny(warnings)]
+
 extern crate bytes;
 extern crate futures;
 extern crate http;
@@ -12,8 +14,7 @@ mod server;
 use std::error::Error as StdError;
 use std::sync::Arc;
 
-use bytes::Bytes;
-use futures::{Future, Stream};
+use futures::Future;
 
 pub use body::{empty_body, Body, BodyStream};
 pub use handler::Handler;
