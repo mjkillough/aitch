@@ -64,7 +64,7 @@ where
 {
     let (parts, body) = req.into_parts();
     let body_stream = body.map(hyper::Chunk::into_bytes).map_err(Box::from);
-    Body::from_stream(body_stream).map(move |body| http::Request::from_parts(parts, body))
+    Body::from_stream(Box::new(body_stream)).map(move |body| http::Request::from_parts(parts, body))
 }
 
 fn internal_server_error() -> Result<http::Response<hyper::Body>> {
