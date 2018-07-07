@@ -5,15 +5,19 @@ use Error;
 
 pub trait Body
 where
-    Self: Send + 'static,
+    Self: Send + Sized + 'static,
 {
-    fn from_stream(stream: BodyStream) -> Box<Future<Item = Self, Error = Error> + Send>;
+    type Future: Future<Item = Self, Error = Error> + Send;
+
+    fn from_stream(stream: BodyStream) -> Self::Future;
 
     fn into_stream(self) -> BodyStream;
 }
 
 impl Body for () {
-    fn from_stream(_: BodyStream) -> Box<Future<Item = Self, Error = Error> + Send> {
+    type Future = Box<Future<Item = Self, Error = Error> + Send>;
+
+    fn from_stream(_: BodyStream) -> Self::Future {
         Box::new(future::ok(()))
     }
 
@@ -23,7 +27,9 @@ impl Body for () {
 }
 
 impl Body for Vec<u8> {
-    fn from_stream(stream: BodyStream) -> Box<Future<Item = Self, Error = Error> + Send> {
+    type Future = Box<Future<Item = Self, Error = Error> + Send>;
+
+    fn from_stream(stream: BodyStream) -> Self::Future {
         Box::new(stream.concat2().map(|bytes| bytes.to_vec()))
     }
 
@@ -34,7 +40,9 @@ impl Body for Vec<u8> {
 }
 
 impl Body for String {
-    fn from_stream(stream: BodyStream) -> Box<Future<Item = Self, Error = Error> + Send> {
+    type Future = Box<Future<Item = Self, Error = Error> + Send>;
+
+    fn from_stream(stream: BodyStream) -> Self::Future {
         let fut = stream.concat2().and_then(|bytes| {
             let vec = bytes.to_vec();
             let string = String::from_utf8(vec)?;
@@ -52,7 +60,9 @@ impl Body for String {
 pub type BodyStream = Box<Stream<Item = Bytes, Error = Error> + Send>;
 
 impl Body for BodyStream {
-    fn from_stream(stream: BodyStream) -> Box<Future<Item = Self, Error = Error> + Send> {
+    type Future = Box<Future<Item = Self, Error = Error> + Send>;
+
+    fn from_stream(stream: BodyStream) -> Self::Future {
         Box::new(future::ok(stream))
     }
 
