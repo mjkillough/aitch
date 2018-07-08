@@ -38,7 +38,8 @@ where
     B2: Body,
 {
     let (parts, body) = req.into_parts();
-    B2::from_stream(body.into_stream()).map(move |body| http::Request::from_parts(parts, body))
+    body.into_body::<B2>()
+        .map(move |body| http::Request::from_parts(parts, body))
 }
 
 pub fn box_handler<B: Body>(handler: impl Handler<B>) -> BoxedHandler {

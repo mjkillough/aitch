@@ -12,6 +12,10 @@ where
     fn from_stream(stream: BodyStream) -> Self::Future;
 
     fn into_stream(self) -> BodyStream;
+
+    fn into_body<OtherBody: Body>(self) -> OtherBody::Future {
+        OtherBody::from_stream(self.into_stream())
+    }
 }
 
 impl Body for () {
