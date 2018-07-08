@@ -8,6 +8,12 @@ use {Body, BodyStream, Result};
 
 pub struct Json<T>(pub T);
 
+impl<T> Json<T> {
+    pub fn json(self) -> T {
+        self.0
+    }
+}
+
 impl<T> Body for Json<T>
 where
     T: DeserializeOwned + Serialize + Send + 'static,
