@@ -2,7 +2,8 @@ extern crate aitch;
 extern crate futures;
 extern crate http;
 
-use aitch::{middlewares, Responder, ResponseBuilder};
+use aitch::servers::hyper::Server;
+use aitch::{middlewares, Responder, ResponseBuilder, Result};
 use futures::IntoFuture;
 use http::Request;
 
@@ -11,10 +12,10 @@ fn handler(_req: Request<()>, mut resp: ResponseBuilder) -> impl Responder {
     resp.body(vec).into_future()
 }
 
-fn main() {
+fn main() -> Result<()> {
     let wrapped = middlewares::logging_handler(handler);
 
-    let addr = "127.0.0.1:3000".parse().unwrap();
+    let addr = "127.0.0.1:3000".parse()?;
     println!("Listening on http://{}", addr);
-    aitch::servers::HyperServer::new(addr, wrapped).run();
+    Server::new(addr, wrapped).run()
 }

@@ -4,7 +4,8 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 
-use aitch::{middlewares, Json, Responder, ResponseBuilder};
+use aitch::servers::hyper::Server;
+use aitch::{middlewares, Json, Responder, ResponseBuilder, Result};
 use http::Request;
 
 #[derive(Serialize, Deserialize)]
@@ -22,10 +23,10 @@ fn handler(_req: Request<()>, mut resp: ResponseBuilder) -> impl Responder {
         .body(Json(msg))
 }
 
-fn main() {
+fn main() -> Result<()> {
     let wrapped = middlewares::logging_handler(handler);
 
-    let addr = "127.0.0.1:3000".parse().unwrap();
+    let addr = "127.0.0.1:3000".parse()?;
     println!("Listening on http://{}", addr);
-    aitch::servers::HyperServer::new(addr, wrapped).run();
+    Server::new(addr, wrapped).run()
 }

@@ -34,7 +34,7 @@ where
         }
     }
 
-    pub fn run(self) {
+    pub fn run(self) -> Result<()> {
         let handler = self.handler;
         let new_service = move || {
             let handler = handler.clone();
@@ -53,6 +53,8 @@ where
         hyper::rt::run(server.map_err(|e| {
             eprintln!("server error: {}", e);
         }));
+
+        Ok(())
     }
 }
 

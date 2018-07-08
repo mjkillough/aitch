@@ -1,7 +1,7 @@
 extern crate aitch;
 extern crate http;
 
-use aitch::servers::hyper::Server;
+use aitch::servers::tiny_http::Server;
 use aitch::{middlewares, Responder, ResponseBuilder, Result};
 use http::Request;
 

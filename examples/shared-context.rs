@@ -3,7 +3,8 @@ extern crate http;
 
 use std::sync::Arc;
 
-use aitch::{middlewares, Responder, ResponseBuilder};
+use aitch::servers::hyper::Server;
+use aitch::{middlewares, Responder, ResponseBuilder, Result};
 use http::Request;
 
 struct Context {
@@ -14,14 +15,14 @@ fn handler(ctx: Arc<Context>, _req: Request<()>, mut resp: ResponseBuilder) -> i
     resp.body(ctx.message.clone())
 }
 
-fn main() {
+fn main() -> Result<()> {
     let ctx = Arc::new(Context {
         message: "Hello from a world with context!".to_owned(),
     });
     let handler = middlewares::with_context(ctx, handler);
     let wrapped = middlewares::logging_handler(handler);
 
-    let addr = "127.0.0.1:3000".parse().unwrap();
+    let addr = "127.0.0.1:3000".parse()?;
     println!("Listening on http://{}", addr);
-    aitch::servers::HyperServer::new(addr, wrapped).run();
+    Server::new(addr, wrapped).run()
 }

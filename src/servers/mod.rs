@@ -1,5 +1,5 @@
 #[cfg(feature = "hyper")]
-mod hyper;
+pub mod hyper;
 
-#[cfg(feature = "hyper")]
-pub use self::hyper::Server as HyperServer;
+#[cfg(feature = "tiny_http")]
+pub mod tiny_http;

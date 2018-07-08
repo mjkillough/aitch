@@ -3,12 +3,17 @@
 extern crate bytes;
 extern crate futures;
 extern crate http;
+
+#[cfg(feature = "hyper")]
 extern crate hyper;
 
 #[cfg(feature = "json")]
 extern crate serde;
 #[cfg(feature = "json")]
 extern crate serde_json;
+
+#[cfg(feature = "tiny_http")]
+extern crate tiny_http;
 
 mod body;
 mod handler;
