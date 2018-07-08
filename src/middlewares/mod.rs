@@ -18,3 +18,13 @@ pub fn logging_handler<B: Body>(handler: impl Handler<B>) -> impl Handler<B> {
         })
     }
 }
+
+pub fn with_context<Ctx, Func, ReqBody, Resp>(ctx: Ctx, handler: Func) -> impl Handler<ReqBody>
+where
+    Ctx: Clone + Send + Sync + 'static,
+    Func: Fn(Ctx, http::Request<ReqBody>, ResponseBuilder) -> Resp + Send + Sync + 'static,
+    ReqBody: Body,
+    Resp: Responder,
+{
+    move |req, resp| handler(ctx.clone(), req, resp)
+}

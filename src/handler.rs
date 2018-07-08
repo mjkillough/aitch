@@ -18,8 +18,8 @@ where
 impl<Func, ReqBody, Resp> Handler<ReqBody> for Func
 where
     Func: Fn(http::Request<ReqBody>, ResponseBuilder) -> Resp + Send + Sync + 'static,
-    ReqBody: Body + 'static,
-    Resp: Responder + 'static,
+    ReqBody: Body,
+    Resp: Responder,
 {
     type Resp = Resp;
 
