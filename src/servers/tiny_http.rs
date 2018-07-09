@@ -10,7 +10,7 @@ use http;
 use tiny_http;
 use tokio_threadpool::ThreadPool;
 
-use {Body, BodyStream, Handler, Responder, Result};
+use {Body, BodyStream, Error, Handler, Responder, Result};
 
 pub struct Server<H, ReqBody>
 where
@@ -71,7 +71,8 @@ where
                     .handle(http_request, http::Response::builder())
                     .into_response()
             })
-            .and_then(move |http_response| Ok(req.respond(as_tiny_http_response(http_response)?)?))
+            .and_then(move |http_response| as_tiny_http_response(http_response))
+            .and_then(move |resp| Ok(req.respond(resp)?))
             .or_else(|err| {
                 eprintln!("Server error processing request: {}", err);
                 Ok(())
@@ -149,7 +150,7 @@ fn as_http_request(req: &mut tiny_http::Request) -> Result<http::Request<BodyStr
 
 fn as_tiny_http_response(
     resp: http::Response<BodyStream>,
-) -> Result<tiny_http::Response<Cursor<Bytes>>> {
+) -> impl Future<Item = tiny_http::Response<Cursor<Bytes>>, Error = (Error)> {
     let status_code = tiny_http::StatusCode(resp.status().as_u16());
 
     let headers = resp.headers()
@@ -161,9 +162,13 @@ fn as_tiny_http_response(
         })
         .collect();
 
-    let body_stream = resp.into_body();
-    let body = body_stream.concat2().wait()?;
-
-    let resp = tiny_http::Response::new(status_code, headers, body.into_buf(), None, None);
-    Ok(resp)
+    resp.into_body().concat2().and_then(move |body| {
+        Ok(tiny_http::Response::new(
+            status_code,
+            headers,
+            body.into_buf(),
+            None,
+            None,
+        ))
+    })
 }
