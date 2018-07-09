@@ -4,16 +4,18 @@ extern crate bytes;
 extern crate futures;
 extern crate http;
 
-#[cfg(feature = "hyper")]
-extern crate hyper;
-
 #[cfg(feature = "json")]
 extern crate serde;
 #[cfg(feature = "json")]
 extern crate serde_json;
 
-#[cfg(feature = "tiny_http")]
+#[cfg(feature = "server-hyper")]
+extern crate hyper;
+
+#[cfg(feature = "server-tiny-http")]
 extern crate tiny_http;
+#[cfg(feature = "server-tiny-http")]
+extern crate tokio_threadpool;
 
 mod body;
 mod handler;

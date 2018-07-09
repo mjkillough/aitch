@@ -5,9 +5,10 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use bytes::{Bytes, IntoBuf};
-use futures::{stream, Future, Stream};
+use futures::{future, stream, Future, Stream};
 use http;
 use tiny_http;
+use tokio_threadpool::ThreadPool;
 
 use {Body, BodyStream, Handler, Responder, Result};
 
@@ -38,9 +39,10 @@ where
 
     pub fn run(self) -> Result<()> {
         let server = tiny_http::Server::http(self.addr)?;
+        let pool = ThreadPool::new();
 
         loop {
-            let mut req = match server.recv() {
+            let req = match server.recv() {
                 Ok(req) => req,
                 Err(e) => {
                     eprintln!("Server error: {}", e);
@@ -48,17 +50,32 @@ where
                 }
             };
 
-            let http_req = as_http_request(&mut req).unwrap();
-            let http_req = http_req.map(|body| body.into_body::<ReqBody>().wait().unwrap());
-            let response_builder = http::response::Builder::new();
-            let future = self.handler
-                .handle(http_req, response_builder)
-                .into_response();
-
-            let resp = future.wait().unwrap();
-            let resp = as_tiny_http_response(resp).unwrap();
-            req.respond(resp).unwrap();
+            let handler = self.handler.clone();
+            pool.spawn(future::lazy(move || Server::process_request(handler, req)));
         }
+    }
+
+    fn process_request(
+        handler: Arc<H>,
+        mut req: tiny_http::Request,
+    ) -> impl Future<Item = (), Error = ()> {
+        let http_request = as_http_request(&mut req);
+
+        future::lazy(move || Ok(http_request?.into_parts()))
+            .and_then(|(parts, body)| {
+                body.into_body::<ReqBody>()
+                    .map(move |body| http::Request::from_parts(parts, body))
+            })
+            .and_then(move |http_request| {
+                handler
+                    .handle(http_request, http::Response::builder())
+                    .into_response()
+            })
+            .and_then(move |http_response| Ok(req.respond(as_tiny_http_response(http_response)?)?))
+            .or_else(|err| {
+                eprintln!("Server error processing request: {}", err);
+                Ok(())
+            })
     }
 }
 
