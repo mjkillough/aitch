@@ -52,7 +52,7 @@ fn main() -> Result<()> {
     let mut router = middlewares::SimpleRouter::new();
     router.register_handler("/", page);
     router.register_handler("/ajax", ajax);
-    let wrapped = middlewares::logging_handler(router);
+    let wrapped = middlewares::with_logging(router);
 
     let addr = "127.0.0.1:3000".parse()?;
     println!("Listening on http://{}", addr);
