@@ -9,6 +9,9 @@ extern crate serde;
 #[cfg(feature = "json")]
 extern crate serde_json;
 
+#[cfg(feature = "mime_guess")]
+extern crate mime_guess;
+
 #[cfg(feature = "server-hyper")]
 extern crate hyper;
 

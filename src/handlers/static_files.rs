@@ -3,6 +3,8 @@ use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 
 use http;
+#[cfg(feature = "mime_guess")]
+use mime_guess;
 
 use middlewares;
 use {Error, Handler, ResponseBuilder, Result};
@@ -57,8 +59,9 @@ fn serve_file<P>(path: P, mut resp: ResponseBuilder) -> Result<http::Response<Ve
 where
     P: AsRef<Path>,
 {
-    let content = read_file(path)?;
-    let resp = resp.body(content)?;
+    let content = read_file(&path)?;
+    let resp = resp.header(http::header::CONTENT_TYPE, mime_type(path).as_str())
+        .body(content)?;
     Ok(resp)
 }
 
@@ -70,4 +73,21 @@ where
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer)?;
     Ok(buffer)
+}
+
+#[cfg(feature = "mime_guess")]
+fn mime_type<P>(path: P) -> String
+where
+    P: AsRef<Path>,
+{
+    let mime = mime_guess::guess_mime_type(path);
+    format!("{}", mime)
+}
+
+#[cfg(not(feature = "mime_guess"))]
+fn mime_type<P>(_: P) -> String
+where
+    P: AsRef<Path>,
+{
+    "application/octet-stream".to_owned()
 }
