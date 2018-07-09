@@ -3,7 +3,7 @@ mod router;
 use futures::Future;
 use http;
 
-use {Body, Handler, Responder, ResponseBuilder};
+use {Body, Error, Handler, Responder, ResponseBuilder};
 
 pub use self::router::SimpleRouter;
 
@@ -17,6 +17,20 @@ pub fn with_logging<B: Body>(handler: impl Handler<B>) -> impl Handler<B> {
             resp
         })
     }
+}
+
+pub fn with_error_handling<B, F, R>(handler: impl Handler<B>, func: F) -> impl Handler<B>
+where
+    B: Body,
+    F: Fn(Error) -> R + Clone + Send + Sync + 'static,
+    R: Responder,
+{
+    with_context(func, move |func, req, resp| {
+        handler
+            .handle(req, resp)
+            .into_response()
+            .or_else(move |err| func(err).into_response())
+    })
 }
 
 pub fn with_context<Ctx, Func, ReqBody, Resp>(ctx: Ctx, handler: Func) -> impl Handler<ReqBody>

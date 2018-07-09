@@ -45,7 +45,7 @@ where
                 map_request_body(req)
                     .and_then(move |req| handler.handle(req, builder).into_response())
                     .map(map_response_body)
-                    .or_else(|_| internal_server_error())
+                    .or_else(|err| internal_server_error(err))
             })
         };
 
@@ -70,7 +70,9 @@ where
         .map(move |body| http::Request::from_parts(parts, body))
 }
 
-fn internal_server_error() -> Result<http::Response<hyper::Body>> {
+fn internal_server_error(err: Error) -> Result<http::Response<hyper::Body>> {
+    eprintln!("server error: {}", err);
+
     let resp = http::Response::builder()
         .status(http::StatusCode::INTERNAL_SERVER_ERROR)
         .body(hyper::Body::empty());

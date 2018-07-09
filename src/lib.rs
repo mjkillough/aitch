@@ -19,6 +19,7 @@ extern crate tokio_threadpool;
 
 mod body;
 mod handler;
+pub mod handlers;
 #[cfg(feature = "json")]
 mod json;
 pub mod middlewares;
