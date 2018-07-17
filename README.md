@@ -1,4 +1,4 @@
-# aitch
+# aitch [![Build Status](https://travis-ci.org/mjkillough/aitch.svg?branch=master)](https://travis-ci.org/mjkillough/aitch) [![Crates.io](https://img.shields.io/crates/v/aitch.svg)](https://crates.io/crates/aitch) [![Docs.rs](https://docs.rs/aitch/badge.svg)](https://docs.rs/aitch/)
 
 aitch is a simple, lightweight toolkit for building HTTP servers in Rust.
 
