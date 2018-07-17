@@ -13,7 +13,7 @@ fn handler(_req: Request<()>, mut resp: ResponseBuilder) -> impl Responder {
 }
 
 fn main() -> Result<()> {
-    let wrapped = middlewares::with_logging(handler);
+    let wrapped = middlewares::with_stdout_logging(handler);
 
     let addr = "127.0.0.1:3000".parse()?;
     println!("Listening on http://{}", addr);

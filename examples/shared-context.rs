@@ -20,7 +20,7 @@ fn main() -> Result<()> {
         message: "Hello from a world with context!".to_owned(),
     });
     let handler = middlewares::with_context(ctx, handler);
-    let wrapped = middlewares::with_logging(handler);
+    let wrapped = middlewares::with_stdout_logging(handler);
 
     let addr = "127.0.0.1:3000".parse()?;
     println!("Listening on http://{}", addr);

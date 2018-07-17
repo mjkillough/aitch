@@ -15,9 +15,10 @@ fn handler2(_req: Request<()>, mut resp: ResponseBuilder) -> impl Responder {
 
 fn main() -> Result<()> {
     let mut router = middlewares::SimpleRouter::new();
-    router.register_handler("/handler1", handler1);
+    router.register_handler("/", handler1);
     router.register_handler("/handler2", handler2);
-    let handler = middlewares::with_logging(router);
+
+    let handler = middlewares::with_stdout_logging(router);
 
     let addr = "127.0.0.1:3000".parse()?;
     println!("Listening on http://{}", addr);
