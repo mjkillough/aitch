@@ -1,6 +1,6 @@
 # aitch [![Build Status](https://travis-ci.org/mjkillough/aitch.svg?branch=master)](https://travis-ci.org/mjkillough/aitch) [![Crates.io](https://img.shields.io/crates/v/aitch.svg)](https://crates.io/crates/aitch) [![Docs.rs](https://docs.rs/aitch/badge.svg)](https://docs.rs/aitch/)
 
-aitch is a simple, lightweight toolkit for building HTTP servers in Rust.
+aitch is a simple, lightweight toolkit for building HTTP servers in safe, stable Rust.
 
 It builds upon the [`http` crate](https://github.com/hyperium/http), and provides additional types for representing HTTP handlers, bodies and middlewares. It provides both [`hyper`](https://hyper.rs/) and [`tiny_http`](https://github.com/tiny-http/tiny-http) backends for running handlers, but aims to be agnostic of the HTTP server library.
 
