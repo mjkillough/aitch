@@ -60,9 +60,9 @@ These features will probably be split out into separate crates in the near futur
 
 ## Is it fast?
 
-It seems to be fast enough.
+It's pretty fast!
 
-When profiling the default `hello-world-sync` example (with logging to `stdout` disabled), with 10 threads and 100 connections, we see ~130,000 req/s on a 2015 13inch MBP:
+When profiling the default `hello-world-sync` example (with logging to `stdout` disabled), with 12 threads and 100 connections, we see ~130,000 req/s on a 2015 13inch MBP:
 
 ```
 $ wrk --latency -t12 -c100 -d10s http://localhost:3000/
