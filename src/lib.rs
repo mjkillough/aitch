@@ -99,14 +99,60 @@
 //! [`aitch::servers::hyper::Server`]: servers/hyper/struct.Server.html
 //! [`aitch::servers::tiny_http::Server`]: servers/tiny_http/struct.Server.html
 //!
-//! # Dealing with Request/Response Bodies
+//! # Request/Response Bodies
 //!
-//! // TODO
+//! The [`http::Request<B>`] and [`http::Response<B>`] types from the [`http` crate] do not restrict
+//! the type of the body used in requests and bodies.
+//!
+//! The [`Body`] trait is used by aitch to place some contraints on the body types used, so that handlers,
+//! middlewares and servers can make assumptions about how to deserialize it from the raw HTTP
+//! request, and how they should be serialized to the raw HTTP responses.
+//!
+//! [`http::Request<B>`]: https://docs.rs/http/0.1.7/http/request/struct.Request.html
+//! [`http::Response<B>`]: https://docs.rs/http/0.1.7/http/response/struct.Response.html
+//! [`http` crate]: https://github.com/hyperium/http
+//! [`Body`]: trait.Body.html
 //!
 //! # Writing Middlewares
 //!
-//! // TODO
+//! In the context of aitch, a middleware is anything that takes one [`Handler`] and returns another
+//! (possibly modified) [`Handler`].
 //!
+//! The simplest middleware, which does nothing but return the provided [`Handler`] is written as:
+//!
+//! ```
+//! # use aitch::{Body, Handler};
+//! #
+//! fn noop_middleware<B: Body>(handler: impl Handler<B>) -> impl Handler<B> {
+//!     handler
+//! }
+//! ```
+//!
+//! Middlewares may mutate the [`http::response::Builder`] before calling their wrapped handler, in
+//! order to modify the response that will be returned:
+//!
+//! [`http::response::Builder`]: https://docs.rs/http/0.1.7/http/response/struct.Builder.html
+//!
+//! ```
+//! # extern crate aitch;
+//! # extern crate http;
+//! #
+//! # use aitch::{Body, Handler};
+//! #
+//! fn with_served_by<B: Body>(handler: impl Handler<B>) -> impl Handler<B> {
+//!     move |req, mut resp: http::response::Builder| {
+//!         resp.header("X-Served-By", "aitch");
+//!         // Middleware authors should be aware that the wrapped handler is
+//!         // under no obligation to use the provided `http::response::Builder`.
+//!         handler.handle(req, resp)
+//!     }
+//! }
+//! ```
+//!
+//! aitch provides some sample [middlewares], which provide more detailed examples of how
+//! third-party applications can create their own middleware.
+//!
+//! [middlewares]: ./middlewares/index.html
 
 extern crate bytes;
 extern crate futures;

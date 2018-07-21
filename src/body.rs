@@ -9,7 +9,7 @@ use {Error, Result};
 /// the type of the body used in requests and bodies.
 ///
 /// [`http::Request<B>`]: https://docs.rs/http/0.1.7/http/request/struct.Request.html
-/// [`http::Response<B>`]: https://docs.rs/http/0.1.7/http/request/struct.Response.html
+/// [`http::Response<B>`]: https://docs.rs/http/0.1.7/http/response/struct.Response.html
 /// [`http` crate]: https://github.com/hyperium/http
 ///
 /// This type is used by `aitch` to place some contraints on the body types used, so that handlers,
