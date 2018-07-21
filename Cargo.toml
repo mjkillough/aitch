@@ -3,7 +3,11 @@ name = "aitch"
 description = "A HTTP server toolkit, loosely based on Go's net/http."
 license = "MIT"
 version = "0.1.0"
+readme = "README.md"
 authors = ["Michael Killough <michaeljkillough@gmail.com>"]
+
+[badges]
+travis-ci = { repository = "https://github.com/mjkillough/aitch", branch = "master" }
 
 [features]
 default = ["json", "server-hyper", "server-tiny-http", "mime_guess"]
