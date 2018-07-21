@@ -5,13 +5,77 @@ use http;
 
 use {Body, BodyStream, BoxedResponse, Error, Responder, ResponseBuilder};
 
+/// A trait indicating that the type can be used to handler to a HTTP request.
+///
+/// The `Handler` trait is most commonly used through functions of the following type, for which it
+/// is automatically implemented:
+///
+/// ```ignore
+/// Fn(http::Request<impl Body>, http::response::Builder) -> impl Responder
+/// ```
+///
+/// It can also be implemented manually for more complex types, which store state associated with
+/// the handler.
+///
+/// # Example
+///
+/// A function which implements the `Handler` trait:
+///
+/// ```
+/// # extern crate aitch;
+/// # extern crate http;
+/// #
+/// # use aitch::{Responder, ResponseBuilder};
+/// # use http::Request;
+/// #
+/// fn handler(_: http::Request<()>, mut resp: ResponseBuilder) -> impl Responder {
+///     resp.body("Hello, world".to_owned())
+/// }
+/// ```
+///
+/// A more complex type can also implement the `Handler` trait directly:
+///
+/// ```
+/// # extern crate aitch;
+/// # extern crate http;
+/// #
+/// # use aitch::{Handler, Responder, ResponseBuilder};
+/// # use http::Request;
+/// #
+/// struct ComplexHandler {
+///     message: String
+/// }
+///
+/// impl Handler<()> for ComplexHandler {
+///     type Resp = http::Result<http::Response<String>>;
+///
+///     fn handle(&self, _: Request<()>, mut resp: ResponseBuilder) -> Self::Resp {
+///         resp.body(self.message.clone())
+///     }
+/// }
+/// ```
+///
+/// # Storing a `Handler`
+///
+/// If you need to store a `Handler`, the [`BoxedHandler`] type (and corresponding [`box_handler`]
+/// function) can be used to erase the generic types of the handler.
+///
+/// This can be particularly useful if you need to store multiple handlers (such as in a request
+/// router) which may deal with different request/response bodies, or use different [`Responder`]
+/// types.
+///
+/// [`BoxedHandler`]: type.BoxedHandler.html
+/// [`box_handler`]: fn.box_handler.html
+/// [`Responder`]: trait.Responder.html
 pub trait Handler<ReqBody>
 where
     ReqBody: Body,
     Self: Send + Sync + 'static,
 {
+    /// The `Responder` type returned by this `Handler`.
     type Resp: Responder;
 
+    /// Handles an incoming HTTP request, returning a `Responder` describing a HTTP response.
     fn handle(&self, http::Request<ReqBody>, ResponseBuilder) -> Self::Resp;
 }
 
