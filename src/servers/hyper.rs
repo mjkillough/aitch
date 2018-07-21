@@ -72,7 +72,7 @@ where
     ReqBody: Body,
 {
     addr: SocketAddr,
-    serve: Box<ServeFunc>,
+    serve: Box<ServeFunc + Send>,
     marker: PhantomData<(H, ReqBody)>,
 }
 
@@ -96,7 +96,7 @@ where
         })
     }
 
-    fn construct_server(addr: SocketAddr, handler: H) -> (SocketAddr, Box<ServeFunc>) {
+    fn construct_server(addr: SocketAddr, handler: H) -> (SocketAddr, Box<ServeFunc + Send>) {
         let handler = Arc::new(handler);
         let new_service = move || {
             let handler = handler.clone();

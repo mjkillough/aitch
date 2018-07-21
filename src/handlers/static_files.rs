@@ -54,6 +54,11 @@ use {Error, Handler, ResponseBuilder, Result};
 ///
 /// See the [module level] documentation for details of the MIME types used to serve responses.
 ///
+/// # Errors
+///
+/// This function checks the directory exists when called, and attempts to canoncicalize the path.
+/// If this fails for any reason (such as directory not found), it returns an error.
+///
 /// # Security
 ///
 /// This handler is intended **for development use only**. See the [module level] documentation for

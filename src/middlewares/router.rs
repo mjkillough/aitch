@@ -96,7 +96,7 @@ impl SimpleRouter {
         self.handlers
             .iter()
             .filter(|&(pattern, _)| uri.path().starts_with(pattern))
-            .max_by(|&(pattern1, _), &(pattern2, _)| pattern1.cmp(pattern2))
+            .max_by_key(|&(pattern, _)| pattern.len())
     }
 }
 
