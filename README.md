@@ -39,7 +39,7 @@ cargo run --release --example hello-world-sync
 
 See also these other examples in the `examples/` directory of this repo:
  - [`json.rs`](examples/json.rs), which uses the optional `Json<T>` type to wrap structs which are automatically (de)serialized in request/response bodies.
- - [`simple-router.rs`](examples/simple-router.rs), which provides a simple request router, modelled after [`net/http`'s `ServeMux`](https://golang.org/pkg/net/http/#ServeMux).
+ - [`simple-router.rs`](examples/simple-router.rs), which uses a simple request router, modelled after [`net/http`'s `ServeMux`](https://golang.org/pkg/net/http/#ServeMux).
  - [`shared-context.rs`](examples/shared-context.rs), which shows how to use the provided `middlewares::with_context` to inject a struct containing shared resources into an application's HTTP handlers.
  - [`examples/static-files/`](examples/static-files/), which shows how to use the provided `handlers::static_files::*` handlers in order to serve static assets during development.
 
