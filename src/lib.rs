@@ -1,4 +1,5 @@
 #![deny(warnings)]
+#![deny(unsafe_code)]
 
 //! aitch is a simple, lightweight toolkit for building HTTP servers in safe, stable Rust.
 //!
