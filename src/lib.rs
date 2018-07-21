@@ -89,7 +89,7 @@
 //! #
 //! # fn main() -> Result<()> {
 //! let addr = "127.0.0.1:3000".parse()?;
-//! aitch::servers::hyper::Server::new(addr, handler).run()
+//! aitch::servers::hyper::Server::new(addr, handler)?.run()
 //! # }
 //! ```
 //!

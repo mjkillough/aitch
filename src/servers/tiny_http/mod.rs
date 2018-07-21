@@ -63,7 +63,7 @@ use {Body, Handler, Responder, Result};
 /// #
 /// # fn main() -> Result<()> {
 /// let addr = "127.0.0.1:3000".parse()?;
-/// aitch::servers::tiny_http::Server::new(addr, handler).run()
+/// aitch::servers::tiny_http::Server::new(addr, handler)?.run()
 /// # }
 /// ```
 pub struct Server<H, ReqBody>
@@ -71,7 +71,7 @@ where
     H: Handler<ReqBody>,
     ReqBody: Body,
 {
-    addr: SocketAddr,
+    server: tiny_http::Server,
     handler: Arc<H>,
     marker: PhantomData<ReqBody>,
 }
@@ -86,23 +86,28 @@ where
     ///
     /// [`SocketAddr`]: https://doc.rust-lang.org/std/net/enum.SocketAddr.html
     /// [`Handler`]: ../../trait.Handler.html
-    pub fn new(addr: SocketAddr, handler: H) -> Server<H, ReqBody> {
+    pub fn new(addr: SocketAddr, handler: H) -> Result<Server<H, ReqBody>> {
+        let server = tiny_http::Server::http(addr)?;
         let handler = Arc::new(handler);
         let marker = PhantomData;
-        Server {
-            addr,
+        Ok(Server {
+            server,
             handler,
             marker,
-        }
+        })
+    }
+
+    /// Returns the address that the server is listening on.
+    pub fn addr(&self) -> SocketAddr {
+        self.server.server_addr()
     }
 
     /// Starts and runs the server.
     pub fn run(self) -> Result<()> {
-        let server = tiny_http::Server::http(self.addr)?;
         let pool = ThreadPool::new();
 
         loop {
-            let req = match server.recv() {
+            let req = match self.server.recv() {
                 Ok(req) => req,
                 Err(e) => {
                     eprintln!("Server error: {}", e);

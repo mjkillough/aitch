@@ -20,6 +20,20 @@ use hyper::server::Server as HyperServer;
 
 use {Body, BodyStream, Error, Handler, Responder, Result};
 
+// Works around lack of Box<FnOnce>/FnBox.
+pub trait ServeFunc {
+    fn call_box(self: Box<Self>) -> Result<()>;
+}
+
+impl<F> ServeFunc for F
+where
+    F: FnOnce() -> Result<()>,
+{
+    fn call_box(self: Box<Self>) -> Result<()> {
+        (*self)()
+    }
+}
+
 /// A [`hyper`] server, which can serve a handler.
 ///
 /// This server back-end uses [`hyper`] to listen for incoming HTTP requests, call the provided
@@ -49,7 +63,7 @@ use {Body, BodyStream, Error, Handler, Responder, Result};
 /// #
 /// # fn main() -> Result<()> {
 /// let addr = "127.0.0.1:3000".parse()?;
-/// aitch::servers::hyper::Server::new(addr, handler).run()
+/// aitch::servers::hyper::Server::new(addr, handler)?.run()
 /// # }
 /// ```
 pub struct Server<H, ReqBody>
@@ -58,8 +72,8 @@ where
     ReqBody: Body,
 {
     addr: SocketAddr,
-    handler: Arc<H>,
-    marker: PhantomData<ReqBody>,
+    serve: Box<ServeFunc>,
+    marker: PhantomData<(H, ReqBody)>,
 }
 
 impl<H, ReqBody> Server<H, ReqBody>
@@ -72,19 +86,18 @@ where
     ///
     /// [`SocketAddr`]: https://doc.rust-lang.org/std/net/enum.SocketAddr.html
     /// [`Handler`]: ../../trait.Handler.html
-    pub fn new(addr: SocketAddr, handler: H) -> Server<H, ReqBody> {
-        let handler = Arc::new(handler);
+    pub fn new(addr: SocketAddr, handler: H) -> Result<Server<H, ReqBody>> {
+        let (addr, serve) = Server::construct_server(addr, handler);
         let marker = PhantomData;
-        Server {
+        Ok(Server {
             addr,
-            handler,
+            serve,
             marker,
-        }
+        })
     }
 
-    /// Starts and runs the server.
-    pub fn run(self) -> Result<()> {
-        let handler = self.handler;
+    fn construct_server(addr: SocketAddr, handler: H) -> (SocketAddr, Box<ServeFunc>) {
+        let handler = Arc::new(handler);
         let new_service = move || {
             let handler = handler.clone();
             hyper::service::service_fn(move |req| {
@@ -98,12 +111,28 @@ where
             })
         };
 
-        let server = HyperServer::bind(&self.addr).serve(new_service);
-        hyper::rt::run(server.map_err(|e| {
-            eprintln!("server error: {}", e);
-        }));
+        let server = HyperServer::bind(&addr).serve(new_service);
+        let addr = server.local_addr();
 
-        Ok(())
+        let closure = move || {
+            hyper::rt::run(server.map_err(|e| {
+                eprintln!("server error: {}", e);
+            }));
+
+            Ok(())
+        };
+
+        (addr, Box::new(closure))
+    }
+
+    /// Returns the address that the server is listening on.
+    pub fn addr(&self) -> SocketAddr {
+        self.addr
+    }
+
+    /// Starts and runs the server.
+    pub fn run(self) -> Result<()> {
+        self.serve.call_box()
     }
 }
 

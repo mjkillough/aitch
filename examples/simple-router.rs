@@ -22,5 +22,5 @@ fn main() -> Result<()> {
 
     let addr = "127.0.0.1:3000".parse()?;
     println!("Listening on http://{}", addr);
-    Server::new(addr, handler).run()
+    Server::new(addr, handler)?.run()
 }
