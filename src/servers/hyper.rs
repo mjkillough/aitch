@@ -29,6 +29,7 @@ impl<F> ServeFunc for F
 where
     F: FnOnce() -> Result<()>,
 {
+    #[cfg_attr(feature = "cargo-clippy", allow(boxed_local))]
     fn call_box(self: Box<Self>) -> Result<()> {
         (*self)()
     }
