@@ -3,8 +3,7 @@ use std::collections::HashMap;
 use http;
 
 use {
-    box_handler, response_with_status, Body, BodyStream, BoxedHandler, BoxedResponse, Handler,
-    Responder, ResponseBuilder,
+    box_handler, Body, BodyStream, BoxedHandler, BoxedResponse, Handler, Responder, ResponseBuilder,
 };
 
 #[derive(Default)]
@@ -41,10 +40,12 @@ impl SimpleRouter {
 impl Handler<BodyStream> for SimpleRouter {
     type Resp = BoxedResponse;
 
-    fn handle(&self, req: http::Request<BodyStream>, resp: ResponseBuilder) -> BoxedResponse {
+    fn handle(&self, req: http::Request<BodyStream>, mut resp: ResponseBuilder) -> BoxedResponse {
         match self.handler(req.uri()) {
             Some((_, handler)) => handler.handle(req, resp),
-            None => response_with_status(http::StatusCode::NOT_FOUND).into_response(),
+            None => resp.status(http::StatusCode::NOT_FOUND)
+                .body(())
+                .into_response(),
         }
     }
 }

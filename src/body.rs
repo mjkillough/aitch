@@ -91,6 +91,6 @@ impl Body for BodyStream {
     }
 }
 
-pub fn empty_body() -> BodyStream {
+fn empty_body() -> BodyStream {
     Box::new(stream::once(Ok(Bytes::new())))
 }

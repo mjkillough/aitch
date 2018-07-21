@@ -36,9 +36,8 @@
 //! # extern crate http;
 //! #
 //! # use aitch::Responder;
-//! # use http::Request;
 //! #
-//! fn handler(_: Request<()>, mut resp: http::response::Builder) -> impl Responder {
+//! fn handler(_: http::Request<()>, mut resp: http::response::Builder) -> impl Responder {
 //!     resp.body("Hello, world!".to_owned())
 //! }
 //! ```
@@ -143,20 +142,61 @@ use std::error::Error as StdError;
 
 use futures::Future;
 
-pub use body::{empty_body, Body, BodyStream};
+pub use body::{Body, BodyStream};
 pub use handler::{box_handler, BoxedHandler, Handler};
 pub use responder::Responder;
 
 #[cfg(feature = "json")]
 pub use json::Json;
 
+/// A type alias for [`http::response::Builder`].
+///
+/// This allows a simpler type signature for handler functions.
+///
+/// # Example
+///
+/// ```
+/// # extern crate aitch;
+/// # extern crate http;
+/// #
+/// # use aitch::{ResponseBuilder, Responder};
+/// # use http::Request;
+/// #
+/// fn handler(_req: Request<()>, mut resp: ResponseBuilder) -> impl Responder {
+///     resp.body("Hello, world".to_owned())
+/// }
+/// ```
+///
+/// [`http::response::Builder`]: https://docs.rs/http/0.1.7/http/response/struct.Builder.html
 pub type ResponseBuilder = http::response::Builder;
 
+/// A generic error type for aitch handlers and middlewares.
+///
+/// An error type of `Box<std::error::Error>` is used, so that the error type is as generic as possible
+/// and can be passed through layers of third-party handlers and middlewares.
+///
+/// In most cases, handlers and middlewares should aim to handle their own errors (and return an
+/// appropriate HTTP response). Returning an error from a handler should be an exceptional
+/// circumstance, and will most likely (depending on the middleware/server in use) result in a
+/// generic HTTP 500 error page.
 pub type Error = Box<StdError + Send + Sync>;
+
+/// A type alias to make working with `Result<T, aitch::Error>` more convenient.
 pub type Result<T> = ::std::result::Result<T, Error>;
 
-type BoxedResponse = Box<Future<Item = http::Response<BodyStream>, Error = Error> + Send>;
-
-pub fn response_with_status(status: http::StatusCode) -> impl Responder {
-    http::Response::builder().status(status).body(empty_body())
-}
+/// Represents a future returning a HTTP response, with all types erased.
+///
+/// Handlers which return one of many different [`Responder`] types (e.g. depending on the HTTP
+/// request details) can use this type to return a generic response, with all type variables erased.
+///
+/// To get a `BoxedResponse`, use the [`Responder::into_response()`] trait method.
+///
+/// [`Responder`]: trait.Responder.html
+/// [`Responder::into_response()`]: trait.Responder.html#tymethod.into_response
+///
+/// # Example
+///
+/// See [`BoxedHandler`] for an example of its use.
+///
+/// [`BoxedHandler`]: type.BoxedHandler.html
+pub type BoxedResponse = Box<Future<Item = http::Response<BodyStream>, Error = Error> + Send>;
