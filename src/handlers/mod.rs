@@ -1,3 +1,3 @@
-mod static_files;
+//! A collection of useful HTTP handlers.
 
-pub use self::static_files::{static_file_handler, static_files_handler};
+pub mod static_files;
