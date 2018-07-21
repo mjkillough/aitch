@@ -160,3 +160,25 @@ where
 {
     "application/octet-stream".to_owned()
 }
+
+#[cfg(test)]
+mod test {
+    use std::path::Path;
+
+    use super::match_file;
+
+    #[test]
+    fn match_file_in_directory() {
+        let root = Path::new("examples").to_path_buf().canonicalize().unwrap();
+        let path = match_file(root.clone(), "/static-files").unwrap();
+        let expected = root.join("static-files");
+        assert_eq!(path.as_ref().to_str().unwrap(), expected.to_str().unwrap());
+    }
+
+    #[test]
+    fn match_file_directory_traversal_attack() {
+        let path = Path::new("examples").to_path_buf().canonicalize().unwrap();
+        let result = match_file(path, "../Cargo.toml");
+        assert!(result.is_err());
+    }
+}
