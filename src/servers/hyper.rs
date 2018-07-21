@@ -1,3 +1,14 @@
+//! Provides a [`hyper`] server, which can serve a handler.
+//!
+//! This module provides [`Server`], which is a [`hyper`] server which uses a [`Handler`] to respond
+//! to incoming HTTP requests.
+//!
+//! See the documentation of [`Server`] for more detail.
+//!
+//! [`hyper`]: https://hyper.rs
+//! [`Server`]: struct.Server.html
+//! [`Handler`]: ../../trait.Handler.html
+
 use std::marker::PhantomData;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -9,6 +20,38 @@ use hyper::server::Server as HyperServer;
 
 use {Body, BodyStream, Error, Handler, Responder, Result};
 
+/// A [`hyper`] server, which can serve a handler.
+///
+/// This server back-end uses [`hyper`] to listen for incoming HTTP requests, call the provided
+/// [`Handler`], and then return the response to the client.
+///
+/// The server uses the default [`tokio`] runtime to serve requests, which uses a separate reactor
+/// to drive I/O resources, and a thread-pool which uses those I/O resources to construct HTTP
+/// requests/responses. The provided handler (and any handlers it may call) are all run on this
+/// thread-pool.
+///
+/// [`hyper`]: https://hyper.rs
+/// [`Handler`]: ../../trait.Handler.html
+/// [`tokio`]: https://tokio.rs
+///
+/// # Example
+///
+/// ```no_run
+/// # extern crate aitch;
+/// # extern crate http;
+/// #
+/// # use aitch::{middlewares, Responder, ResponseBuilder, Result};
+/// # use http::Request;
+/// #
+/// # fn handler(_req: Request<()>, mut resp: ResponseBuilder) -> impl Responder {
+/// #    resp.body("Hello, world!".to_owned())
+/// # }
+/// #
+/// # fn main() -> Result<()> {
+/// let addr = "127.0.0.1:3000".parse()?;
+/// aitch::servers::hyper::Server::new(addr, handler).run()
+/// # }
+/// ```
 pub struct Server<H, ReqBody>
 where
     H: Handler<ReqBody>,
@@ -24,6 +67,11 @@ where
     H: Handler<ReqBody>,
     ReqBody: Body,
 {
+    /// Creates a server which will listen on the provided [`SocketAddr`] and handle requests using
+    /// the provided [`Handler`].
+    ///
+    /// [`SocketAddr`]: https://doc.rust-lang.org/std/net/enum.SocketAddr.html
+    /// [`Handler`]: ../../trait.Handler.html
     pub fn new(addr: SocketAddr, handler: H) -> Server<H, ReqBody> {
         let handler = Arc::new(handler);
         let marker = PhantomData;
@@ -34,6 +82,7 @@ where
         }
     }
 
+    /// Starts and runs the server.
     pub fn run(self) -> Result<()> {
         let handler = self.handler;
         let new_service = move || {
