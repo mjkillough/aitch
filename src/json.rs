@@ -14,12 +14,14 @@ impl<T> Json<T> {
     }
 }
 
+type JsonFuture<T> =
+    future::AndThen<stream::Concat2<BodyStream>, Result<Json<T>>, fn(Bytes) -> Result<Json<T>>>;
+
 impl<T> Body for Json<T>
 where
     T: DeserializeOwned + Serialize + Send + 'static,
 {
-    type Future =
-        future::AndThen<stream::Concat2<BodyStream>, Result<Json<T>>, fn(Bytes) -> Result<Json<T>>>;
+    type Future = JsonFuture<T>;
 
     fn from_stream(stream: BodyStream) -> Self::Future {
         stream.concat2().and_then(|bytes| {

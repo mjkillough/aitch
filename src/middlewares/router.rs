@@ -7,15 +7,14 @@ use {
     Responder, ResponseBuilder,
 };
 
+#[derive(Default)]
 pub struct SimpleRouter {
     handlers: HashMap<String, BoxedHandler>,
 }
 
 impl SimpleRouter {
-    pub fn new() -> SimpleRouter {
-        SimpleRouter {
-            handlers: HashMap::new(),
-        }
+    pub fn new() -> Self {
+        SimpleRouter::default()
     }
 
     pub fn register_handler<S, H, ReqBody>(&mut self, pattern: S, handler: H)

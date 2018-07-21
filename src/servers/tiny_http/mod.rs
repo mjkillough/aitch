@@ -73,8 +73,11 @@ where
                     .handle(http_request, http::Response::builder())
                     .into_response()
             })
-            .and_then(move |http_response| as_tiny_http_response(http_response))
-            .and_then(move |resp| Ok(req.respond(resp)?))
+            .and_then(as_tiny_http_response)
+            .and_then(move |resp| {
+                req.respond(resp)?;
+                Ok(())
+            })
             .or_else(|err| {
                 eprintln!("Server error processing request: {}", err);
                 Ok(())

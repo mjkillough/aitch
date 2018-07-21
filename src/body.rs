@@ -42,8 +42,10 @@ impl Body for Bytes {
     }
 }
 
+type VecFuture = future::Map<stream::Concat2<BodyStream>, fn(Bytes) -> Vec<u8>>;
+
 impl Body for Vec<u8> {
-    type Future = future::Map<stream::Concat2<BodyStream>, fn(Bytes) -> Vec<u8>>;
+    type Future = VecFuture;
 
     fn from_stream(stream: BodyStream) -> Self::Future {
         stream.concat2().map(|bytes| bytes.to_vec())
@@ -55,9 +57,11 @@ impl Body for Vec<u8> {
     }
 }
 
+type StringFuture =
+    futures::AndThen<stream::Concat2<BodyStream>, Result<String>, fn(Bytes) -> Result<String>>;
+
 impl Body for String {
-    type Future =
-        futures::AndThen<stream::Concat2<BodyStream>, Result<String>, fn(Bytes) -> Result<String>>;
+    type Future = StringFuture;
 
     fn from_stream(stream: BodyStream) -> Self::Future {
         stream.concat2().and_then(|bytes| {
