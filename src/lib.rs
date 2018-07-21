@@ -35,10 +35,10 @@
 //! # extern crate aitch;
 //! # extern crate http;
 //! #
-//! # use aitch::{ResponseBuilder, Responder};
+//! # use aitch::Responder;
 //! # use http::Request;
 //! #
-//! fn handler(_: Request<()>, mut resp: ResponseBuilder) -> impl Responder {
+//! fn handler(_: Request<()>, mut resp: http::response::Builder) -> impl Responder {
 //!     resp.body("Hello, world!".to_owned())
 //! }
 //! ```

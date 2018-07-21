@@ -15,10 +15,10 @@ extern crate aitch;
 extern crate http;
 
 use aitch::servers::hyper::Server;
-use aitch::{middlewares, Responder, ResponseBuilder, Result};
+use aitch::{middlewares, Responder, Result};
 use http::Request;
 
-fn handler(_: Request<()>, mut resp: ResponseBuilder) -> impl Responder {
+fn handler(_: Request<()>, mut resp: http::response::Builder) -> impl Responder {
     resp.body("Hello, world!".to_owned())
 }
 
